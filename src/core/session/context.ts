@@ -56,7 +56,7 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
     // Companies the user can act in, plus (for regular users) the role per company —
     // captured here so the active role is never re-queried.
     let companies: SessionCompany[] = [];
-    const roleByCompany = new Map<string, string>();
+    const membershipByCompany = new Map<string, string>();
     const roleNameByCompany = new Map<string, string>();
 
     if (isSuperAdmin) {
@@ -65,14 +65,14 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
     } else {
       const { data } = await core
         .from('company_memberships')
-        .select('role_id, role:roles(name), company:companies(id, name)')
+        .select('id, role:roles(name), company:companies(id, name)')
         .eq('user_id', authUser.id)
         .eq('status', 'active');
       for (const m of data ?? []) {
         const c = (m as any).company;
         if (c?.id) {
           companies.push({ id: c.id, name: c.name });
-          if ((m as any).role_id) roleByCompany.set(c.id, (m as any).role_id);
+          if ((m as any).id) membershipByCompany.set(c.id, (m as any).id);
           const roleName = (m as any).role?.name;
           if (roleName) roleNameByCompany.set(c.id, roleName);
         }
@@ -91,16 +91,20 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
         : companies[0].id;
 
     // Independent reads run in parallel: enabled modules, and (regular users) the
-    // active role's permissions. Super admins hold every catalogue permission.
-    const activeRoleId = roleByCompany.get(activeCompanyId) ?? null;
+    // active membership's per-user permission grants (the authoritative source that
+    // RLS also reads). Super admins hold every catalogue permission.
+    const activeMembershipId = membershipByCompany.get(activeCompanyId) ?? null;
     const [enabledRowsRes, permsRes] = await Promise.all([
       core
         .from('company_modules')
         .select('enabled, module:modules(key)')
         .eq('company_id', activeCompanyId)
         .eq('enabled', true),
-      !isSuperAdmin && activeRoleId
-        ? core.from('role_permissions').select('permission:permissions(key)').eq('role_id', activeRoleId)
+      !isSuperAdmin && activeMembershipId
+        ? core
+            .from('membership_permissions')
+            .select('permission:permissions(key)')
+            .eq('membership_id', activeMembershipId)
         : Promise.resolve({ data: null } as { data: null }),
     ]);
 

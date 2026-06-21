@@ -151,15 +151,36 @@ export async function createCompany(formData: FormData): Promise<void> {
     fail('Company created, but the company_admin role is missing. Contact an administrator.');
   }
 
-  const { error: membershipErr } = await core.from('company_memberships').insert({
-    user_id: ctx.user.id,
-    company_id: companyId,
-    role_id: (role as { id: string }).id,
-    status: 'active',
-  });
+  const roleId = (role as { id: string }).id;
+  const { data: membership, error: membershipErr } = await core
+    .from('company_memberships')
+    .insert({
+      user_id: ctx.user.id,
+      company_id: companyId,
+      role_id: roleId,
+      status: 'active',
+    })
+    .select('id')
+    .single();
 
-  if (membershipErr) {
-    fail(`Company created, but assigning you as its admin failed: ${membershipErr.message}`);
+  if (membershipErr || !membership) {
+    fail(`Company created, but assigning you as its admin failed: ${membershipErr?.message ?? 'unknown error'}`);
+  }
+
+  // Seed the creator's per-user permission grants from the company_admin template.
+  // membership_permissions is the authoritative source for has_permission() (0014),
+  // so a new membership must carry explicit grants.
+  const { data: rolePerms } = await core
+    .from('role_permissions')
+    .select('permission_id')
+    .eq('role_id', roleId);
+  if (rolePerms && rolePerms.length > 0) {
+    await core.from('membership_permissions').insert(
+      (rolePerms as { permission_id: string }[]).map((rp) => ({
+        membership_id: (membership as { id: string }).id,
+        permission_id: rp.permission_id,
+      })),
+    );
   }
 
   // 3) Enable the standard modules for the new company.
