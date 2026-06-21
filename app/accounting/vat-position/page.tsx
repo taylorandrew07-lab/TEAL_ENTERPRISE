@@ -33,11 +33,13 @@ export default async function VatPositionPage() {
       {!v.configured ? (
         <div className="card" style={{ padding: 28, maxWidth: 620 }}>
           <h2 style={{ fontSize: 'var(--text-lg)', margin: '0 0 6px' }}>Set up your tax codes first</h2>
-          <p className="muted" style={{ marginTop: 0 }}>
+          <p className="muted" style={{ margin: '0 0 18px' }}>
             This view reads VAT from your tax codes’ collected (payable) and paid (recoverable) accounts.
-            Add a VAT tax code with those accounts in <Link href={'/accounting/tax-codes' as Route}>Tax Codes</Link>,
-            and the position fills in as you post.
+            Add a VAT tax code with those accounts, and the position fills in as you post.
           </p>
+          <Link href={'/accounting/tax-codes' as Route} className="btn btn-primary">
+            Set up tax codes →
+          </Link>
         </div>
       ) : (
         <>

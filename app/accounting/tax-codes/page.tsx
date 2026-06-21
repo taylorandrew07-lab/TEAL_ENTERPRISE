@@ -59,7 +59,8 @@ export default async function TaxCodesPage({ searchParams }: { searchParams: { e
           </div>
           {liabilityAccounts.length === 0 ? (
             <p className="muted" style={{ fontSize: 'var(--text-xs)', margin: 0 }}>
-              Tip: add a “VAT Payable” liability account in the Chart of Accounts first, then pick it here so tax can post.
+              Tip: add a “VAT Payable” liability account in the{' '}
+              <a href="/accounting/accounts">Chart of Accounts</a> first, then pick it here so tax can post.
             </p>
           ) : null}
           <div>
