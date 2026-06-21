@@ -71,7 +71,7 @@ export default async function CompaniesPage({
               id="name"
               name="name"
               className="input"
-              placeholder="Taylor Engineering Ltd"
+              placeholder="e.g. Taylor Engineering Ltd"
               required
             />
           </div>
@@ -125,7 +125,7 @@ export default async function CompaniesPage({
               className="input"
               defaultValue="TT"
               maxLength={2}
-              placeholder="TT"
+              placeholder="e.g. TT"
               style={{ textTransform: 'uppercase', maxWidth: 120 }}
               required
             />

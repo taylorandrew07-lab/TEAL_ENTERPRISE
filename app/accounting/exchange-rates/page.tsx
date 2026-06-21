@@ -35,7 +35,7 @@ export default async function ExchangeRatesPage({ searchParams }: { searchParams
             <CurrencyField id="to_currency" label="To" currencies={currencies} def="TTD" />
             <div className="field">
               <label className="label" htmlFor="rate">Rate</label>
-              <input id="rate" name="rate" className="input num" inputMode="decimal" placeholder="6.79" required style={{ textAlign: 'right' }} />
+              <input id="rate" name="rate" className="input num" inputMode="decimal" placeholder="e.g. 6.79" required style={{ textAlign: 'right' }} />
             </div>
             <div className="field">
               <label className="label" htmlFor="rate_date">Date</label>

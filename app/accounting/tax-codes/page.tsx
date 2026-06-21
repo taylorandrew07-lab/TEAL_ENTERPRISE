@@ -37,17 +37,17 @@ export default async function TaxCodesPage({ searchParams }: { searchParams: { e
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="field">
               <label className="label" htmlFor="code">Code</label>
-              <input id="code" name="code" className="input" placeholder="VAT" required />
+              <input id="code" name="code" className="input" placeholder="e.g. VAT" required />
             </div>
             <div className="field">
               <label className="label" htmlFor="name">Name</label>
-              <input id="name" name="name" className="input" placeholder="VAT 12.5%" required />
+              <input id="name" name="name" className="input" placeholder="e.g. VAT 12.5%" required />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="field">
               <label className="label" htmlFor="rate">Rate (%)</label>
-              <input id="rate" name="rate" className="input num" inputMode="decimal" placeholder="12.5" required style={{ textAlign: 'right' }} />
+              <input id="rate" name="rate" className="input num" inputMode="decimal" placeholder="e.g. 12.5" required style={{ textAlign: 'right' }} />
             </div>
             <div className="field">
               <label className="label" htmlFor="collected_account_id">Collected (VAT payable) account</label>

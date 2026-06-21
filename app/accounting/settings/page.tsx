@@ -86,7 +86,7 @@ export default async function SettingsPage({
                 name="name"
                 className="input"
                 defaultValue={company.name}
-                placeholder="Taylor Engineering Ltd"
+                placeholder="e.g. Taylor Engineering Ltd"
                 required
               />
             </div>
@@ -161,7 +161,7 @@ export default async function SettingsPage({
                 className="input"
                 defaultValue={company.country_code}
                 maxLength={2}
-                placeholder="TT"
+                placeholder="e.g. TT"
                 style={{ textTransform: 'uppercase', maxWidth: 120 }}
                 required
               />

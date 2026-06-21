@@ -155,7 +155,7 @@ export function UserManagement({
               <div className="field">
                 <label className="label" htmlFor="inv-email">Email</label>
                 <input id="inv-email" className="input" type="email" required value={invite.email}
-                  onChange={(e) => setInvite({ ...invite, email: e.target.value })} placeholder="person@company.com" />
+                  onChange={(e) => setInvite({ ...invite, email: e.target.value })} placeholder="e.g. person@company.com" />
               </div>
               <div className="field">
                 <label className="label" htmlFor="inv-name">Full name</label>

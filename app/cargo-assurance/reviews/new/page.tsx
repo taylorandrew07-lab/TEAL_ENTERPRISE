@@ -39,7 +39,7 @@ export default async function NewReviewPage({ searchParams }: { searchParams: { 
         <form action={createReview} className="card" style={{ padding: 20, maxWidth: 620, display: 'grid', gap: 16 }}>
           <div className="field">
             <label className="label" htmlFor="title">Review title</label>
-            <input id="title" name="title" className="input" placeholder={`Fuel Assurance Review — Jan–Dec ${year}`} required />
+            <input id="title" name="title" className="input" placeholder={`e.g. Fuel Assurance Review — Jan–Dec ${year}`} required />
           </div>
           <div className="field">
             <label className="label" htmlFor="client_id">Client</label>

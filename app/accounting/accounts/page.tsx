@@ -117,13 +117,13 @@ function NewAccountForm({ types, open }: { types: { id: string; name: string; ca
             <label className="label" htmlFor="code">
               Code
             </label>
-            <input id="code" name="code" className="input" inputMode="numeric" placeholder="1000" required />
+            <input id="code" name="code" className="input" inputMode="numeric" placeholder="e.g. 1000" required />
           </div>
           <div className="field">
             <label className="label" htmlFor="name">
               Account name
             </label>
-            <input id="name" name="name" className="input" placeholder="Cash at Bank" required />
+            <input id="name" name="name" className="input" placeholder="e.g. Cash at Bank" required />
           </div>
         </div>
         <div className="field">

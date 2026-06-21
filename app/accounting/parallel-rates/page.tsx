@@ -43,11 +43,11 @@ export default async function ParallelRatesPage({ searchParams }: { searchParams
             <Cur id="to_currency" label="To" currencies={currencies} def="TTD" />
             <div className="field">
               <label className="label" htmlFor="official_rate">Official (bank)</label>
-              <input id="official_rate" name="official_rate" className="input num" inputMode="decimal" placeholder="6.79" required style={{ textAlign: 'right' }} />
+              <input id="official_rate" name="official_rate" className="input num" inputMode="decimal" placeholder="e.g. 6.79" required style={{ textAlign: 'right' }} />
             </div>
             <div className="field">
               <label className="label" htmlFor="parallel_rate">Parallel (real)</label>
-              <input id="parallel_rate" name="parallel_rate" className="input num" inputMode="decimal" placeholder="7.50" required style={{ textAlign: 'right' }} />
+              <input id="parallel_rate" name="parallel_rate" className="input num" inputMode="decimal" placeholder="e.g. 7.50" required style={{ textAlign: 'right' }} />
             </div>
             <div className="field">
               <label className="label" htmlFor="rate_date">Date</label>

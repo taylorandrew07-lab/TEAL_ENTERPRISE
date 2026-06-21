@@ -102,20 +102,20 @@ function NewCustomerForm({
             <label className="label" htmlFor="code">
               Code
             </label>
-            <input id="code" name="code" className="input" placeholder="C-001" required />
+            <input id="code" name="code" className="input" placeholder="e.g. C-001" required />
           </div>
           <div className="field">
             <label className="label" htmlFor="name">
               Customer name
             </label>
-            <input id="name" name="name" className="input" placeholder="Atlantic Shipping Ltd" required />
+            <input id="name" name="name" className="input" placeholder="e.g. Atlantic Shipping Ltd" required />
           </div>
         </div>
         <div className="field">
           <label className="label" htmlFor="email">
             Email
           </label>
-          <input id="email" name="email" className="input" type="email" placeholder="accounts@example.com" />
+          <input id="email" name="email" className="input" type="email" placeholder="e.g. accounts@example.com" />
         </div>
         <div className="field">
           <label className="label" htmlFor="receivable_account_id">

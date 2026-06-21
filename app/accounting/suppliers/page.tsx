@@ -105,20 +105,20 @@ function NewSupplierForm({
             <label className="label" htmlFor="code">
               Code
             </label>
-            <input id="code" name="code" className="input" placeholder="SUP-001" required />
+            <input id="code" name="code" className="input" placeholder="e.g. SUP-001" required />
           </div>
           <div className="field">
             <label className="label" htmlFor="name">
               Supplier name
             </label>
-            <input id="name" name="name" className="input" placeholder="Acme Supplies Ltd" required />
+            <input id="name" name="name" className="input" placeholder="e.g. Acme Supplies Ltd" required />
           </div>
         </div>
         <div className="field">
           <label className="label" htmlFor="email">
             Email <span className="muted">(optional)</span>
           </label>
-          <input id="email" name="email" type="email" className="input" placeholder="billing@acme.com" />
+          <input id="email" name="email" type="email" className="input" placeholder="e.g. billing@acme.com" />
         </div>
         <div className="field">
           <label className="label" htmlFor="payable_account_id">
