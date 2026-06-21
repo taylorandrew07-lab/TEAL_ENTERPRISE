@@ -69,8 +69,11 @@ export default async function InvoicesPage({ searchParams }: { searchParams: { e
                   Due
                 </th>
                 <th style={{ width: 100 }}>Status</th>
-                <th className="num" style={{ width: 160 }}>
+                <th className="num" style={{ width: 150 }}>
                   Total
+                </th>
+                <th className="num" style={{ width: 150 }}>
+                  Balance
                 </th>
               </tr>
             </thead>
@@ -78,13 +81,16 @@ export default async function InvoicesPage({ searchParams }: { searchParams: { e
               {invoices.map((inv) => (
                 <tr key={inv.id}>
                   <td className="date">{formatDate(inv.invoice_date)}</td>
-                  <td style={{ fontWeight: 600 }}>{inv.invoice_no ?? '—'}</td>
+                  <td style={{ fontWeight: 600 }}>
+                    <Link href={`/accounting/invoices/${inv.id}` as Route}>{inv.invoice_no ?? 'View'}</Link>
+                  </td>
                   <td>{inv.customer_name}</td>
                   <td className="date">{formatDate(inv.due_date)}</td>
                   <td>
                     <InvoiceStatusBadge status={inv.status} />
                   </td>
                   <td className="num">{formatMoney(inv.total, inv.currency_code)}</td>
+                  <td className="num">{inv.balance > 0 ? formatMoney(inv.balance, inv.currency_code) : '—'}</td>
                 </tr>
               ))}
             </tbody>

@@ -5,6 +5,7 @@ import {
   listCustomers,
   listIncomeAccounts,
   listReceivableAccounts,
+  listTaxCodes,
   companyBaseCurrencyAR,
 } from '@/modules/accounting/ar';
 import { InvoiceForm } from './InvoiceForm';
@@ -13,10 +14,11 @@ export const metadata = { title: 'New invoice — TEAL Accounting' };
 
 export default async function NewInvoicePage() {
   await requireModule('accounting', 'invoices.manage');
-  const [customers, incomeAccounts, receivableAccounts, baseCurrency] = await Promise.all([
+  const [customers, incomeAccounts, receivableAccounts, taxCodes, baseCurrency] = await Promise.all([
     listCustomers(),
     listIncomeAccounts(),
     listReceivableAccounts(),
+    listTaxCodes(),
     companyBaseCurrencyAR(),
   ]);
 
@@ -65,6 +67,7 @@ export default async function NewInvoicePage() {
           }))}
           incomeAccounts={incomeAccounts}
           receivableAccounts={receivableAccounts}
+          taxCodes={taxCodes.map((t) => ({ id: t.id, code: t.code, name: t.name, rate: t.rate }))}
           baseCurrency={baseCurrency}
         />
       )}

@@ -33,6 +33,7 @@ export const accountingManifest: ModuleManifest = {
     { key: 'balance-sheet', label: 'Balance Sheet', path: 'reports/balance-sheet', icon: 'columns', requires: 'reports.view', group: 'Reports' },
     { key: 'general-ledger', label: 'General Ledger', path: 'reports/general-ledger', icon: 'book-open', requires: 'reports.view', group: 'Reports' },
     { key: 'import', label: 'Import (AccountEdge)', path: 'import', icon: 'upload', requires: 'imports.manage', group: 'Data' },
+    { key: 'tax-codes', label: 'Tax Codes', path: 'tax-codes', icon: 'percent', requires: 'tax.manage', group: 'Setup' },
     { key: 'settings', label: 'Company Settings', path: 'settings', icon: 'settings', requires: 'company.manage', group: 'Setup' },
   ],
   permissions: [
