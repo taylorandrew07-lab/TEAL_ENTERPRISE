@@ -4,3 +4,4 @@ export { CompanySwitcher } from './CompanySwitcher';
 export { ModuleLauncher } from './ModuleLauncher';
 export { ModuleShell } from './ModuleShell';
 export { ModuleEmptyState } from './ModuleEmptyState';
+export { PageSkeleton } from './PageSkeleton';

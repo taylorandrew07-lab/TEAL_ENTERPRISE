@@ -84,6 +84,28 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+/* Refined, unobtrusive scrollbars (more specific rules — e.g. the mobile nav — still win). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-full);
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 body {
@@ -188,9 +210,11 @@ td.num,
 .btn-primary {
   background: var(--primary);
   color: var(--primary-ink);
+  box-shadow: var(--shadow-sm);
 }
 .btn-primary:hover {
   background: var(--primary-strong);
+  box-shadow: var(--shadow);
 }
 .btn-ghost {
   background: var(--surface);
@@ -238,6 +262,19 @@ td.num,
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-sm);
+}
+/* Clickable cards (e.g. dashboard stats) lift on hover, matching the module tiles. */
+a.card {
+  transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  a.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-border);
+    text-decoration: none;
+  }
 }
 
 /* ---- Badges ---- */
@@ -565,6 +602,18 @@ td.num,
 .module-main > * {
   max-width: 1320px;
   margin-inline: auto;
+  /* Seamless navigation: page content fades/rises in on each route change. */
+  animation: page-enter var(--dur-slow) var(--ease-out);
+}
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 /* Date cells shouldn't wrap. */
 .table td.date,
@@ -666,6 +715,7 @@ td.num,
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 .table tbody tr:last-child td {
   border-bottom: none;
@@ -693,6 +743,22 @@ select.input {
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 30px;
+}
+
+/* ---- Loading skeletons (instant navigation feedback) ---- */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  border-radius: var(--r);
+}
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
