@@ -77,3 +77,154 @@ export async function seedStarterChart(): Promise<void> {
   revalidatePath('/accounting/accounts');
   back('/accounting/accounts');
 }
+
+// ---- Periods ----------------------------------------------------------------
+
+export async function createFiscalYear(formData: FormData): Promise<void> {
+  const { acc, supabase, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/periods', 'No active company');
+  const year = parseInt(String(formData.get('year') ?? ''), 10);
+  if (!year || year < 1900 || year > 2200) back('/accounting/periods', 'Enter a valid year');
+
+  const { data: comp } = await supabase
+    .schema('core')
+    .from('companies')
+    .select('fiscal_year_start_month')
+    .eq('id', companyId)
+    .maybeSingle();
+  const startMonth: number = comp?.fiscal_year_start_month ?? 1;
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const rows = Array.from({ length: 12 }, (_, i) => {
+    const offset = startMonth - 1 + i;
+    const monthIndex = offset % 12;
+    const y = year + Math.floor(offset / 12);
+    const start = new Date(Date.UTC(y, monthIndex, 1));
+    const end = new Date(Date.UTC(y, monthIndex + 1, 0));
+    const name = `${start.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })} ${y}`;
+    return {
+      company_id: companyId,
+      fiscal_year: year,
+      period_no: i + 1,
+      name,
+      start_date: fmt(start),
+      end_date: fmt(end),
+      status: 'open' as const,
+    };
+  });
+
+  const { error } = await acc.from('accounting_periods').insert(rows);
+  if (error) back('/accounting/periods', error.message);
+  revalidatePath('/accounting/periods');
+  back('/accounting/periods');
+}
+
+export async function setPeriodStatus(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/periods', 'No active company');
+  const id = String(formData.get('id') ?? '');
+  const status = String(formData.get('status') ?? '');
+  if (!id || !['open', 'closed', 'locked'].includes(status)) back('/accounting/periods', 'Invalid request');
+
+  const { error } = await acc
+    .from('accounting_periods')
+    .update({ status })
+    .eq('id', id)
+    .eq('company_id', companyId);
+  if (error) back('/accounting/periods', error.message);
+  revalidatePath('/accounting/periods');
+  back('/accounting/periods');
+}
+
+// ---- Journal entries --------------------------------------------------------
+
+export interface JournalLineInput {
+  accountId: string;
+  description?: string;
+  debit: number;
+  credit: number;
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Create a journal entry (+ lines) and optionally post it. Returns { error } so the
+ * client form can surface validation/engine errors without losing its state. On
+ * success it redirects to the journals list. The DB posting function is the final
+ * authority (balance in txn + base currency, open period, numbering).
+ */
+export async function postJournalEntry(input: {
+  entryDate: string;
+  currency: string;
+  description: string;
+  lines: JournalLineInput[];
+  post: boolean;
+}): Promise<{ error?: string }> {
+  const { acc, companyId, ctx } = await accountingDb();
+  if (!companyId) return { error: 'No active company' };
+
+  const lines = (input.lines ?? []).filter(
+    (l) => l.accountId && (Number(l.debit) > 0 || Number(l.credit) > 0),
+  );
+  if (lines.length < 2) return { error: 'Add at least two lines, each with a debit or a credit.' };
+  for (const l of lines) {
+    if (Number(l.debit) > 0 && Number(l.credit) > 0) {
+      return { error: 'A line cannot have both a debit and a credit.' };
+    }
+  }
+  const sumD = round2(lines.reduce((s, l) => s + Number(l.debit || 0), 0));
+  const sumC = round2(lines.reduce((s, l) => s + Number(l.credit || 0), 0));
+  if (sumD === 0) return { error: 'Entry has zero value.' };
+  if (sumD !== sumC) return { error: `Entry is not balanced — debits ${sumD} ≠ credits ${sumC}.` };
+
+  const currency = input.currency || 'TTD';
+  const { data: entry, error: e1 } = await acc
+    .from('journal_entries')
+    .insert({
+      company_id: companyId,
+      entry_date: input.entryDate,
+      currency_code: currency,
+      description: input.description?.trim() || null,
+      source: 'manual',
+      status: 'draft',
+      created_by: ctx.user?.id ?? null,
+    })
+    .select('id')
+    .single();
+  if (e1 || !entry) return { error: e1?.message ?? 'Could not create the entry.' };
+
+  const lineRows = lines.map((l, i) => ({
+    company_id: companyId,
+    journal_entry_id: entry.id,
+    line_no: i + 1,
+    account_id: l.accountId,
+    description: l.description?.trim() || null,
+    debit: round2(Number(l.debit || 0)),
+    credit: round2(Number(l.credit || 0)),
+    currency_code: currency,
+    fx_rate: 1,
+    base_debit: round2(Number(l.debit || 0)),
+    base_credit: round2(Number(l.credit || 0)),
+  }));
+  const { error: e2 } = await acc.from('journal_lines').insert(lineRows);
+  if (e2) return { error: e2.message };
+
+  if (input.post) {
+    const { error: e3 } = await acc.rpc('post_journal_entry', { p_entry_id: entry.id });
+    if (e3) return { error: e3.message };
+  }
+
+  revalidatePath('/accounting/journals');
+  redirect('/accounting/journals');
+}
+
+export async function reverseJournalEntry(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/journals', 'No active company');
+  const id = String(formData.get('id') ?? '');
+  if (!id) back('/accounting/journals', 'Invalid request');
+  const { error } = await acc.rpc('reverse_journal_entry', { p_entry_id: id });
+  if (error) back('/accounting/journals', error.message);
+  revalidatePath('/accounting/journals');
+  back('/accounting/journals');
+}

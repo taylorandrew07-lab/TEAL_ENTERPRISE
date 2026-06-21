@@ -18,20 +18,14 @@ export const accountingManifest: ModuleManifest = {
   status: 'live',
   icon: 'ledger',
   enabledByDefault: true,
+  // Nav reflects the screens that exist today; AR/AP/banking/setup are added as
+  // they ship (their permissions already exist in the catalogue).
   navigation: [
     { key: 'dashboard', label: 'Dashboard', path: '', icon: 'gauge', requires: 'reports.view' },
     { key: 'accounts', label: 'Chart of Accounts', path: 'accounts', icon: 'list-tree', requires: 'accounts.manage', group: 'Ledger' },
     { key: 'journals', label: 'Journal Entries', path: 'journals', icon: 'book', requires: 'journals.manage', group: 'Ledger' },
     { key: 'periods', label: 'Periods', path: 'periods', icon: 'calendar', requires: 'periods.manage', group: 'Ledger' },
-    { key: 'customers', label: 'Customers', path: 'customers', icon: 'users', requires: 'customers.manage', group: 'Receivables' },
-    { key: 'invoices', label: 'Invoices', path: 'invoices', icon: 'file-text', requires: 'invoices.manage', group: 'Receivables' },
-    { key: 'suppliers', label: 'Suppliers', path: 'suppliers', icon: 'truck', requires: 'suppliers.manage', group: 'Payables' },
-    { key: 'bills', label: 'Bills', path: 'bills', icon: 'receipt', requires: 'bills.manage', group: 'Payables' },
-    { key: 'banking', label: 'Banking', path: 'banking', icon: 'bank', requires: 'banking.manage', group: 'Banking' },
-    { key: 'currencies', label: 'Currencies & Rates', path: 'currencies', icon: 'coins', requires: 'currency.manage', group: 'Setup' },
-    { key: 'tax', label: 'Tax Codes', path: 'tax', icon: 'percent', requires: 'tax.manage', group: 'Setup' },
-    { key: 'imports', label: 'Imports', path: 'imports', icon: 'upload', requires: 'imports.manage', group: 'Data' },
-    { key: 'reports', label: 'Reports', path: 'reports', icon: 'chart-bar', requires: 'reports.view', group: 'Data' },
+    { key: 'reports', label: 'Reports', path: 'reports', icon: 'chart-bar', requires: 'reports.view', group: 'Reports' },
   ],
   permissions: [
     { key: 'accounts.manage', name: 'Manage chart of accounts', description: 'Create and edit GL accounts', category: 'accounting' },
