@@ -77,7 +77,7 @@ insert into core.roles (company_id, key, name, description, is_system) values
   (null, 'accountant',   'Accountant / Admin User', 'Full accounting access', true),
   (null, 'office_user',  'Office User',             'Day-to-day sales/purchases entry', true),
   (null, 'view_only',    'View-only User',          'Read-only access', true)
-on conflict (company_id, key) do nothing;
+on conflict (key) where company_id is null do nothing;
 
 -- super_admin & company_admin: every permission.
 insert into core.role_permissions (role_id, permission_id)
@@ -163,7 +163,7 @@ insert into core.roles (company_id, key, name, description, is_system) values
   (null, 'ca_reviewer',      'Cargo Reviewer / Publisher',   'Approve and publish reviews',                        true),
   (null, 'ca_client_admin',  'Client Administrator',         'External: read-only + manage own client viewers',    true),
   (null, 'ca_client_viewer', 'Client Viewer',                'External: read-only published dashboards & reports',  true)
-on conflict (company_id, key) do nothing;
+on conflict (key) where company_id is null do nothing;
 
 -- Super Admin & Company Admin already get every permission via the cross join above; re-run to
 -- include the newly-added cargo permissions.
