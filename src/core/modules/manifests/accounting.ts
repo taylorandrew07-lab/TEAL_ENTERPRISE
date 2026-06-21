@@ -39,6 +39,7 @@ export const accountingManifest: ModuleManifest = {
     { key: 'settings', label: 'Company Settings', path: 'settings', icon: 'settings', requires: 'company.manage', group: 'Setup' },
     { key: 'parallel-rates', label: 'Parallel FX Rates', path: 'parallel-rates', icon: 'trending-up', requires: 'private.view', group: 'Private' },
     { key: 'vat-position', label: 'VAT Position', path: 'vat-position', icon: 'scale', requires: 'private.view', group: 'Private' },
+    { key: 'banking', label: 'Bank Accounts', path: 'banking', icon: 'landmark', requires: 'banking.private', group: 'Banking' },
   ],
   permissions: [
     { key: 'accounts.manage', name: 'Manage chart of accounts', description: 'Create and edit GL accounts', category: 'accounting' },

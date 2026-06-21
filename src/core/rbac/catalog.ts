@@ -26,6 +26,7 @@ export const CORE_PERMISSIONS: PermissionDef[] = [
   { key: 'audit.view', name: 'View audit trail', description: 'Read the company audit log', category: 'admin' },
   { key: 'platform.beta', name: 'Access beta features', description: 'See and use features marked Beta', category: 'admin' },
   { key: 'private.view', name: 'View private (management) accounting', description: 'Parallel FX rates and VAT-position management overlay', category: 'admin' },
+  { key: 'banking.private', name: 'View bank accounts (private)', description: 'Private bank register: real balances, statements and reconciliation', category: 'admin' },
   { key: 'clients.manage', name: 'Manage clients', description: 'Create and edit platform clients', category: 'core' },
   { key: 'documents.manage', name: 'Manage documents', description: 'Upload and manage documents', category: 'core' },
 ];
