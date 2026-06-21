@@ -188,7 +188,7 @@ td.num,
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 15px;
+  padding: 10px 18px;
   border-radius: var(--r);
   border: 1px solid transparent;
   font-size: var(--text-base);
@@ -229,7 +229,7 @@ td.num,
 /* ---- Inputs ---- */
 .input {
   width: 100%;
-  padding: 9px 11px;
+  padding: 10px 13px;
   border-radius: var(--r);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -248,7 +248,7 @@ td.num,
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .label {
   font-size: var(--text-sm);
@@ -605,7 +605,7 @@ a.card {
   display: none;
 }
 .module-main {
-  padding: 26px 34px;
+  padding: 32px 44px;
   min-width: 0;
 }
 /* Content uses the available desktop width (capped for readability, centered). */
@@ -674,7 +674,7 @@ a.card {
     background: var(--surface);
   }
   .module-main {
-    padding: 20px 18px;
+    padding: 22px 18px;
   }
 }
 
@@ -685,7 +685,7 @@ a.card {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 22px;
+  margin-bottom: 28px;
 }
 .stack {
   display: flex;
@@ -712,7 +712,7 @@ a.card {
   text-align: left;
   font-weight: 600;
   color: var(--muted);
-  padding: 10px 14px;
+  padding: 13px 18px;
   border-bottom: 1px solid var(--border);
   font-size: var(--text-xs);
   text-transform: uppercase;
@@ -723,7 +723,7 @@ a.card {
   background: var(--surface);
 }
 .table td {
-  padding: 10px 14px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
   transition: background var(--dur-fast) var(--ease-out);
