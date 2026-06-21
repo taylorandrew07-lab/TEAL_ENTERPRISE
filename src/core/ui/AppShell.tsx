@@ -4,6 +4,7 @@
 // yet, so the foundation renders truthfully before provisioning.
 import Link from 'next/link';
 import { CompanySwitcher } from './CompanySwitcher';
+import { signOut } from '@/core/session/auth-actions';
 import type { PlatformContext } from '@/core/session/types';
 
 export function AppShell({ ctx, children }: { ctx: PlatformContext; children: React.ReactNode }) {
@@ -32,11 +33,44 @@ export function AppShell({ ctx, children }: { ctx: PlatformContext; children: Re
             <CompanySwitcher companies={ctx.companies} activeCompanyId={ctx.activeCompanyId} />
           ) : null}
           {ctx.user ? (
-            <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-              {ctx.user.fullName ?? ctx.user.email}
-              {ctx.isSuperAdmin ? ' · Super Admin' : ''}
-            </span>
-          ) : null}
+            <>
+              <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+                {ctx.user.fullName ?? ctx.user.email}
+                {ctx.isSuperAdmin ? ' · Super Admin' : ''}
+              </span>
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid #e2e8f0',
+                    background: '#fff',
+                    color: 'var(--ink)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Sign out
+                </button>
+              </form>
+            </>
+          ) : (
+            <Link
+              href="/sign-in"
+              style={{
+                padding: '6px 14px',
+                borderRadius: 8,
+                background: 'var(--teal)',
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       </header>
 
