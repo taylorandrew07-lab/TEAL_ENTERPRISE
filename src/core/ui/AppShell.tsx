@@ -19,7 +19,7 @@ export function AppShell({ ctx, children }: { ctx: PlatformContext; children: Re
         </Link>
 
         <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
-          {ctx.status === 'ready' && (ctx.isSuperAdmin || can(ctx, 'company.manage')) ? (
+          {ctx.status === 'ready' && (ctx.isSuperAdmin || can(ctx, 'company.manage') || can(ctx, 'users.manage')) ? (
             <Link href="/admin" className="nav-link" style={{ padding: '6px 10px' }}>
               Admin
             </Link>

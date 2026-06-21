@@ -8,7 +8,9 @@ export const metadata = { title: 'Administration — TEAL Enterprise' };
 
 export default async function AdminHome() {
   const ctx = await requireAuth();
-  if (!ctx.isSuperAdmin && !can(ctx, 'company.manage')) redirect('/');
+  const canCompanies = ctx.isSuperAdmin || can(ctx, 'company.manage');
+  const canUsers = ctx.isSuperAdmin || can(ctx, 'users.manage');
+  if (!canCompanies && !canUsers) redirect('/');
 
   return (
     <div>
@@ -30,11 +32,20 @@ export default async function AdminHome() {
           maxWidth: 760,
         }}
       >
-        <AdminCard
-          href={'/admin/companies' as Route}
-          title="Companies"
-          description="Create a new company, review the ones you can access, and switch the active company."
-        />
+        {canCompanies ? (
+          <AdminCard
+            href={'/admin/companies' as Route}
+            title="Companies"
+            description="Create a new company, review the ones you can access, and switch the active company."
+          />
+        ) : null}
+        {canUsers ? (
+          <AdminCard
+            href={'/admin/users' as Route}
+            title="Users & Access"
+            description="Invite people and grant each one exactly the permissions they need — individual checkboxes, with role templates as a starting point."
+          />
+        ) : null}
       </div>
     </div>
   );
