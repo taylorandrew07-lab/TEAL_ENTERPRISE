@@ -1,7 +1,17 @@
 # TEAL Enterprise — Handoff
 
-**Date:** 2026-06-17
-**Status:** ⏸ Paused — foundation authored; blocked on Supabase provisioning pending internal approvals.
+**Date:** 2026-06-21
+**Status:** 🟢 LIVE — Supabase Pro deployed; code on GitHub; CI/CD green; auth built. **Only Vercel
+remains** (needs the owner — token or dashboard import; see `docs/deployment.md`).
+
+> **Live deployment (2026-06-21):** Supabase project `gysgmzbvnjlagiekovya` (us-east-1). All 8
+> migrations + seed applied and tracked; the 7 engine tests pass live (incl. USD→TTD base recompute).
+> GitHub `taylorandrew07-lab/TEAL_ENTERPRISE` (main) with two green GitHub Actions — **CI**
+> (typecheck/test/build) and **Deploy DB migrations** (idempotent, single project, no Supabase
+> branches → no branch cost). Supabase Auth wired (sign-in/out, session middleware, `auth.users`→
+> `core.users` sync trigger; the first signup becomes super admin). **Next (morning):** link Vercel
+> (env vars + region iad1 in `docs/deployment.md`) and confirm the Supabase **Spend Cap is ON**.
+> Everything below describes the earlier pre-provisioning state and is retained for history.
 
 > The build is parked at a clean, self-consistent checkpoint. Nothing is half-written. The next
 > step (running the database foundation) requires a Supabase project, which is on hold until
