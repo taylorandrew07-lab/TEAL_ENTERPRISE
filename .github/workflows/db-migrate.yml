@@ -1,0 +1,30 @@
+name: Deploy DB migrations
+
+# Applies any NEW migrations + seed to the Supabase project when they change on main.
+# The runner records applied versions in supabase_migrations.schema_migrations, so it
+# is idempotent (already-applied migrations are skipped). Targets the single project
+# directly — NO Supabase preview branches are created, to avoid branch compute costs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed/**'
+      - 'scripts/db-migrate.mjs'
+  workflow_dispatch: {}
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Apply migrations + seed
+        run: node scripts/db-migrate.mjs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
