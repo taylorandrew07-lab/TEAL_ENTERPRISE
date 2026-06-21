@@ -339,6 +339,148 @@ td.num,
   letter-spacing: 0;
 }
 
+/* ---- Account menu (header, top-right) ---- */
+.account-menu {
+  position: relative;
+}
+.account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 9px 5px 6px;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.account-trigger:hover {
+  background: var(--surface-2);
+}
+.account-trigger[aria-expanded='true'] {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+.account-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-trigger-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.account-trigger-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.account-trigger-badge {
+  white-space: nowrap;
+}
+.account-caret {
+  flex: none;
+  color: var(--muted);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.account-trigger[aria-expanded='true'] .account-caret {
+  transform: rotate(180deg);
+}
+.account-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 256px;
+  z-index: var(--z-dropdown);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 7px;
+  animation: account-pop-in var(--dur-fast) var(--ease-out);
+}
+@keyframes account-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.account-pop-head {
+  padding: 8px 10px 11px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.account-pop-name {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+.account-pop-email {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  margin-top: 2px;
+  word-break: break-all;
+}
+.account-section-label {
+  padding: 8px 10px 3px;
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.account-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: var(--r);
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.account-item:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+.account-item[data-active='true'] {
+  color: var(--primary-strong);
+  font-weight: 600;
+}
+.account-item-tick {
+  display: inline-block;
+  width: 12px;
+  flex: none;
+  color: var(--primary-strong);
+}
+.account-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 4px;
+}
+
 /* ---- Module shell (responsive) ---- */
 .module-shell {
   display: grid;
@@ -371,6 +513,49 @@ td.num,
   text-transform: uppercase;
   color: var(--muted);
   font-weight: 600;
+}
+/* ---- Collapsible nav groups (desktop) ---- */
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+.nav-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 12px 10px 5px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.nav-group-toggle:hover {
+  color: var(--ink-2);
+}
+.nav-group-chevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.nav-group[data-open='true'] .nav-group-chevron {
+  transform: rotate(90deg);
+}
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-group[data-open='false'] .nav-group-items {
+  display: none;
 }
 .module-main {
   padding: 26px 34px;
@@ -414,6 +599,14 @@ td.num,
     display: none;
   }
   .nav-group-label {
+    display: none;
+  }
+  /* Flatten collapsible groups into the horizontal row; show all links. */
+  .nav-group,
+  .nav-group-items {
+    display: contents;
+  }
+  .nav-group-toggle {
     display: none;
   }
   .nav-link {

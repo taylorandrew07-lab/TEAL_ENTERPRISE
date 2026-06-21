@@ -46,6 +46,7 @@ insert into core.permissions (key, name, description, category) values
   ('company.manage',    'Manage company settings',   'Edit company profile, settings, numbering', 'admin'),
   ('users.manage',      'Manage users & roles',      'Invite users, assign roles, edit roles',    'admin'),
   ('audit.view',        'View audit trail',          'Read the company audit log',                'admin'),
+  ('platform.beta',     'Access beta features',      'See and use features marked Beta',          'admin'),
   ('clients.manage',    'Manage clients',            'Create and edit platform clients',          'core'),
   ('documents.manage',  'Manage documents',          'Upload and manage documents',               'core'),
   ('accounts.manage',   'Manage chart of accounts',  'Create and edit GL accounts',               'accounting'),

@@ -37,6 +37,8 @@ export interface PlatformContext {
   /** permission keys the user holds in the active company (super admins hold all). */
   permissions: string[];
   isSuperAdmin: boolean;
+  /** Human label for the user's role in the active company ('Super Admin' for super admins). */
+  roleLabel: string | null;
 }
 
 export const EMPTY_CONTEXT: PlatformContext = {
@@ -47,6 +49,7 @@ export const EMPTY_CONTEXT: PlatformContext = {
   enabledModuleKeys: [],
   permissions: [],
   isSuperAdmin: false,
+  roleLabel: null,
 };
 
 /** Convenience: does this context grant a permission key? */

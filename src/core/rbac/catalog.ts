@@ -24,6 +24,7 @@ export const CORE_PERMISSIONS: PermissionDef[] = [
   { key: 'company.manage', name: 'Manage company settings', description: 'Edit company profile, settings, numbering', category: 'admin' },
   { key: 'users.manage', name: 'Manage users & roles', description: 'Invite users, assign roles, edit roles', category: 'admin' },
   { key: 'audit.view', name: 'View audit trail', description: 'Read the company audit log', category: 'admin' },
+  { key: 'platform.beta', name: 'Access beta features', description: 'See and use features marked Beta', category: 'admin' },
   { key: 'clients.manage', name: 'Manage clients', description: 'Create and edit platform clients', category: 'core' },
   { key: 'documents.manage', name: 'Manage documents', description: 'Upload and manage documents', category: 'core' },
 ];

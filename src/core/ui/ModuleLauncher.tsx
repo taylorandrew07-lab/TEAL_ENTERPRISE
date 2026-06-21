@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { visibleModules } from '@/core/modules';
-import type { PlatformContext } from '@/core/session/types';
+import { can, type PlatformContext } from '@/core/session/types';
 import './module-launcher.css';
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -15,7 +15,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 export function ModuleLauncher({ ctx }: { ctx: PlatformContext }) {
-  const modules = visibleModules(ctx.enabledModuleKeys, ctx.isSuperAdmin);
+  const modules = visibleModules(ctx.enabledModuleKeys, ctx.isSuperAdmin, can(ctx, 'platform.beta'));
   const company = ctx.companies.find((c) => c.id === ctx.activeCompanyId);
 
   return (

@@ -30,11 +30,20 @@ export function getModuleForPath(pathname: string): ModuleManifest | undefined {
  * Modules visible in the launcher for a company + user.
  * @param enabledKeys  module keys enabled for the active company (core.company_modules).
  * @param isSuperAdmin super admins see every non-archived module regardless of enablement.
+ * @param canBeta      whether the user holds the `platform.beta` privilege; beta-status
+ *                     modules (and their "Beta" badge) are hidden from users without it.
  */
-export function visibleModules(enabledKeys: Iterable<string>, isSuperAdmin = false): ModuleManifest[] {
+export function visibleModules(
+  enabledKeys: Iterable<string>,
+  isSuperAdmin = false,
+  canBeta = false,
+): ModuleManifest[] {
   const enabled = new Set(enabledKeys);
   return MODULES.filter(
-    (m) => m.status !== 'archived' && (isSuperAdmin || (m.status !== 'planned' && enabled.has(m.key))),
+    (m) =>
+      m.status !== 'archived' &&
+      (m.status !== 'beta' || canBeta) &&
+      (isSuperAdmin || (m.status !== 'planned' && enabled.has(m.key))),
   );
 }
 

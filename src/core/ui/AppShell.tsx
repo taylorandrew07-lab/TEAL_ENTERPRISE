@@ -1,9 +1,10 @@
 // AppShell — the global platform chrome (sticky header) around every page. Brand
-// mark + wordmark, company switcher, signed-in user / sign-out. Honest connection
-// banner when Supabase isn't wired. Responsive: the header wraps on small screens.
+// mark + wordmark, optional Admin link, and the account menu (name/role + dropdown).
+// Honest connection banner when Supabase isn't wired. TEAL Enterprise is the primary
+// entity, so there is no company selector in the header — company switching lives in
+// the account menu and only appears when the user belongs to more than one company.
 import Link from 'next/link';
-import { CompanySwitcher } from './CompanySwitcher';
-import { signOut } from '@/core/session/auth-actions';
+import { AccountMenu } from './AccountMenu';
 import { can, type PlatformContext } from '@/core/session/types';
 
 export function AppShell({ ctx, children }: { ctx: PlatformContext; children: React.ReactNode }) {
@@ -18,10 +19,6 @@ export function AppShell({ ctx, children }: { ctx: PlatformContext; children: Re
         </Link>
 
         <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
-          {ctx.status === 'ready' ? (
-            <CompanySwitcher companies={ctx.companies} activeCompanyId={ctx.activeCompanyId} />
-          ) : null}
-
           {ctx.status === 'ready' && (ctx.isSuperAdmin || can(ctx, 'company.manage')) ? (
             <Link href="/admin" className="nav-link" style={{ padding: '6px 10px' }}>
               Admin
@@ -29,21 +26,14 @@ export function AppShell({ ctx, children }: { ctx: PlatformContext; children: Re
           ) : null}
 
           {ctx.user ? (
-            <div className="row" style={{ gap: 10 }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--ink-2)' }} className="hide-sm">
-                {ctx.user.fullName ?? ctx.user.email}
-                {ctx.isSuperAdmin ? (
-                  <span className="badge badge-brand" style={{ marginLeft: 8 }}>
-                    Super Admin
-                  </span>
-                ) : null}
-              </span>
-              <form action={signOut}>
-                <button type="submit" className="btn btn-ghost btn-sm">
-                  Sign out
-                </button>
-              </form>
-            </div>
+            <AccountMenu
+              displayName={ctx.user.fullName ?? ctx.user.email}
+              email={ctx.user.email}
+              roleLabel={ctx.roleLabel}
+              isSuperAdmin={ctx.isSuperAdmin}
+              companies={ctx.companies}
+              activeCompanyId={ctx.activeCompanyId}
+            />
           ) : (
             <Link href="/sign-in" className="btn btn-primary btn-sm">
               Sign in

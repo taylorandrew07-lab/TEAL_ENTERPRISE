@@ -57,6 +57,7 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
     // captured here so the active role is never re-queried.
     let companies: SessionCompany[] = [];
     const roleByCompany = new Map<string, string>();
+    const roleNameByCompany = new Map<string, string>();
 
     if (isSuperAdmin) {
       const { data } = await core.from('companies').select('id, name').order('name');
@@ -64,7 +65,7 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
     } else {
       const { data } = await core
         .from('company_memberships')
-        .select('role_id, company:companies(id, name)')
+        .select('role_id, role:roles(name), company:companies(id, name)')
         .eq('user_id', authUser.id)
         .eq('status', 'active');
       for (const m of data ?? []) {
@@ -72,6 +73,8 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
         if (c?.id) {
           companies.push({ id: c.id, name: c.name });
           if ((m as any).role_id) roleByCompany.set(c.id, (m as any).role_id);
+          const roleName = (m as any).role?.name;
+          if (roleName) roleNameByCompany.set(c.id, roleName);
         }
       }
     }
@@ -109,6 +112,8 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
       ? allPermissionKeys()
       : ((permsRes.data ?? []) as any[]).map((p) => p.permission?.key).filter(Boolean);
 
+    const roleLabel = isSuperAdmin ? 'Super Admin' : (roleNameByCompany.get(activeCompanyId) ?? null);
+
     return {
       status: 'ready',
       user,
@@ -117,6 +122,7 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
       enabledModuleKeys,
       permissions,
       isSuperAdmin,
+      roleLabel,
     };
   } catch {
     // Any failure resolving context (e.g. DB not reachable) degrades safely.
