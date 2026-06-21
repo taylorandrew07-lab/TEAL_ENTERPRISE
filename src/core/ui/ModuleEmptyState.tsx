@@ -1,6 +1,6 @@
 // ModuleEmptyState — a real, honest empty state for a module landing screen.
-// Used before any data exists for a company. No demo/fake data — it states what
-// the module does and what the user can do next based on their permissions.
+// Used before any data exists. No demo data — states what the screen does and the
+// next action(s) based on the user's permissions.
 import Link from 'next/link';
 import type { Route } from 'next';
 
@@ -11,36 +11,29 @@ export function ModuleEmptyState({
 }: {
   title: string;
   description: string;
-  actions?: { label: string; href: string }[];
+  actions?: { label: string; href: string; primary?: boolean }[];
 }) {
   return (
     <div
       style={{
-        border: '1px dashed #cbd5e1',
-        borderRadius: 12,
+        border: '1px dashed var(--border-strong)',
+        borderRadius: 'var(--r-lg)',
         padding: '40px 28px',
-        textAlign: 'center',
-        background: '#fff',
+        background: 'var(--surface)',
         maxWidth: 640,
       }}
     >
-      <h2 style={{ margin: '0 0 8px', fontSize: '1.2rem' }}>{title}</h2>
-      <p style={{ color: 'var(--muted)', margin: '0 auto 20px', maxWidth: 480 }}>{description}</p>
+      <h2 style={{ margin: '0 0 8px', fontSize: 'var(--text-lg)' }}>{title}</h2>
+      <p className="muted" style={{ margin: '0 0 20px', maxWidth: 480, lineHeight: 1.55 }}>
+        {description}
+      </p>
       {actions.length > 0 ? (
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
           {actions.map((a) => (
             <Link
               key={a.href}
               href={a.href as Route}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                background: 'var(--teal)',
-                color: '#fff',
-                textDecoration: 'none',
-                fontSize: 14,
-                fontWeight: 600,
-              }}
+              className={`btn ${a.primary === false ? 'btn-ghost' : 'btn-primary'}`}
             >
               {a.label}
             </Link>
