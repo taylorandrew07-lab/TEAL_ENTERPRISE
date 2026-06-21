@@ -34,7 +34,10 @@ export const accountingManifest: ModuleManifest = {
     { key: 'general-ledger', label: 'General Ledger', path: 'reports/general-ledger', icon: 'book-open', requires: 'reports.view', group: 'Reports' },
     { key: 'import', label: 'Import (AccountEdge)', path: 'import', icon: 'upload', requires: 'imports.manage', group: 'Data' },
     { key: 'tax-codes', label: 'Tax Codes', path: 'tax-codes', icon: 'percent', requires: 'tax.manage', group: 'Setup' },
+    { key: 'exchange-rates', label: 'Exchange Rates', path: 'exchange-rates', icon: 'banknote', requires: 'currency.manage', group: 'Setup' },
     { key: 'settings', label: 'Company Settings', path: 'settings', icon: 'settings', requires: 'company.manage', group: 'Setup' },
+    { key: 'parallel-rates', label: 'Parallel FX Rates', path: 'parallel-rates', icon: 'trending-up', requires: 'private.view', group: 'Private' },
+    { key: 'vat-position', label: 'VAT Position', path: 'vat-position', icon: 'scale', requires: 'private.view', group: 'Private' },
   ],
   permissions: [
     { key: 'accounts.manage', name: 'Manage chart of accounts', description: 'Create and edit GL accounts', category: 'accounting' },
