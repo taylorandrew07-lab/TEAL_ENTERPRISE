@@ -197,7 +197,7 @@ td.num,
   white-space: nowrap;
   transition: background var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    box-shadow var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .btn:active {
   transform: scale(0.97);
@@ -391,10 +391,14 @@ a.card {
   cursor: pointer;
   font: inherit;
   color: var(--ink);
-  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 .account-trigger:hover {
   background: var(--surface-2);
+}
+.account-trigger:active {
+  transform: scale(0.97);
 }
 .account-trigger[aria-expanded='true'] {
   background: var(--surface-2);
@@ -446,16 +450,19 @@ a.card {
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-md);
   padding: 7px;
+  /* Scale out of the trigger (top-right corner), not from nowhere — nothing in the
+     real world appears from scale(0); start near full size with a touch of rise. */
+  transform-origin: top right;
   animation: account-pop-in var(--dur-fast) var(--ease-out);
 }
 @keyframes account-pop-in {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: scale(0.96) translateY(-6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1) translateY(0);
   }
 }
 .account-pop-head {
@@ -501,6 +508,9 @@ a.card {
   background: var(--surface-2);
   color: var(--ink);
   text-decoration: none;
+}
+.account-item:active {
+  background: var(--surface-3);
 }
 .account-item[data-active='true'] {
   color: var(--primary-strong);
@@ -602,13 +612,14 @@ a.card {
 .module-main > * {
   max-width: 1320px;
   margin-inline: auto;
-  /* Seamless navigation: page content fades/rises in on each route change. */
-  animation: page-enter var(--dur-slow) var(--ease-out);
+  /* Seamless navigation: page content fades/rises in on each route change. Kept crisp
+     (~200ms, strong ease-out) because navigation is frequent — slow feels sluggish. */
+  animation: page-enter var(--dur) var(--ease-out);
 }
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
