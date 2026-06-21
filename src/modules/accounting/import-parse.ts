@@ -244,4 +244,124 @@ export interface ImportResult {
   imported?: number;
   skipped?: number;
   batchId?: string;
+  reports?: RowReport[];
+}
+
+// -----------------------------------------------------------------------------
+// Dry-run classification — decide each row's fate BEFORE committing, with reasons.
+// Pure so the dry-run and the commit share one source of truth.
+// -----------------------------------------------------------------------------
+
+export type RowStatus = 'create' | 'exists' | 'duplicate-in-file' | 'error';
+
+export interface RowReport {
+  index: number; // 1-based source row number
+  code: string;
+  name: string;
+  status: RowStatus;
+  detail: string;
+}
+
+export interface ImportPreview {
+  error?: string;
+  reports: RowReport[];
+  summary: { total: number; create: number; exists: number; duplicateInFile: number; error: number };
+}
+
+export interface PreparedAccount {
+  code: string;
+  name: string;
+  account_type_id: string;
+  is_bank_account: boolean;
+}
+export interface PreparedCard {
+  code: string;
+  name: string;
+  email: string | null;
+}
+
+export function summarize(reports: RowReport[]): ImportPreview['summary'] {
+  const s = { total: reports.length, create: 0, exists: 0, duplicateInFile: 0, error: 0 };
+  for (const r of reports) {
+    if (r.status === 'create') s.create++;
+    else if (r.status === 'exists') s.exists++;
+    else if (r.status === 'duplicate-in-file') s.duplicateInFile++;
+    else s.error++;
+  }
+  return s;
+}
+
+/** Classify chart-of-accounts rows. existingCodes are codes already in the company. */
+export function classifyAccountRows(
+  rows: string[][],
+  mapping: ColumnMapping,
+  idByKey: Map<string, string>,
+  validKeys: Set<string>,
+  existingCodes: Set<string>,
+): { reports: RowReport[]; toInsert: PreparedAccount[] } {
+  const reports: RowReport[] = [];
+  const toInsert: PreparedAccount[] = [];
+  const seen = new Set<string>();
+  rows.forEach((row, i) => {
+    const index = i + 1;
+    const code = normalizeCode(cell(row, mapping.code));
+    const name = cell(row, mapping.name);
+    if (!code || !name) {
+      reports.push({ index, code, name, status: 'error', detail: !code && !name ? 'Missing code and name' : !code ? 'Missing code' : 'Missing name' });
+      return;
+    }
+    if (seen.has(code)) {
+      reports.push({ index, code, name, status: 'duplicate-in-file', detail: 'Same code appears earlier in this file' });
+      return;
+    }
+    seen.add(code);
+    if (existingCodes.has(code)) {
+      reports.push({ index, code, name, status: 'exists', detail: 'Account already exists — skipped' });
+      return;
+    }
+    const typeText = mapping.type !== null ? cell(row, mapping.type) : '';
+    const { key, inferred } = resolveAccountTypeKey(code, typeText, validKeys);
+    toInsert.push({ code, name, account_type_id: idByKey.get(key)!, is_bank_account: key === 'bank' });
+    reports.push({ index, code, name, status: 'create', detail: `Type: ${key.replace(/_/g, ' ')}${inferred === 'prefix' || inferred === 'default' ? ' (inferred)' : ''}` });
+  });
+  return { reports, toInsert };
+}
+
+/** Classify customer/vendor card rows. existingCodesUpper are upper-cased existing codes. */
+export function classifyCardRows(
+  rows: string[][],
+  mapping: ColumnMapping,
+  existingCodesUpper: Set<string>,
+): { reports: RowReport[]; toInsert: PreparedCard[] } {
+  const reports: RowReport[] = [];
+  const toInsert: PreparedCard[] = [];
+  const used = new Set<string>();
+  const seen = new Set<string>();
+  rows.forEach((row, i) => {
+    const index = i + 1;
+    const name = cell(row, mapping.name);
+    if (!name) {
+      reports.push({ index, code: '', name: '', status: 'error', detail: 'Missing name' });
+      return;
+    }
+    let code = mapping.code !== null ? cell(row, mapping.code) : '';
+    const derived = !code;
+    if (!code) code = deriveCode(name, used);
+    used.add(code.toUpperCase());
+    const upper = code.toUpperCase();
+    if (seen.has(upper)) {
+      reports.push({ index, code, name, status: 'duplicate-in-file', detail: 'Same code appears earlier in this file' });
+      return;
+    }
+    seen.add(upper);
+    if (existingCodesUpper.has(upper)) {
+      reports.push({ index, code, name, status: 'exists', detail: 'Already exists — skipped' });
+      return;
+    }
+    const emailRaw = mapping.email !== null ? cell(row, mapping.email) : '';
+    const email = emailRaw && /@/.test(emailRaw) ? emailRaw : null;
+    toInsert.push({ code, name, email });
+    reports.push({ index, code, name, status: 'create', detail: derived ? 'Code derived from name' : (email ? '' : 'No email') });
+  });
+  return { reports, toInsert };
 }
