@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { CompanySwitcher } from './CompanySwitcher';
 import { signOut } from '@/core/session/auth-actions';
-import type { PlatformContext } from '@/core/session/types';
+import { can, type PlatformContext } from '@/core/session/types';
 
 export function AppShell({ ctx, children }: { ctx: PlatformContext; children: React.ReactNode }) {
   return (
@@ -20,6 +20,12 @@ export function AppShell({ ctx, children }: { ctx: PlatformContext; children: Re
         <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
           {ctx.status === 'ready' ? (
             <CompanySwitcher companies={ctx.companies} activeCompanyId={ctx.activeCompanyId} />
+          ) : null}
+
+          {ctx.status === 'ready' && (ctx.isSuperAdmin || can(ctx, 'company.manage')) ? (
+            <Link href="/admin" className="nav-link" style={{ padding: '6px 10px' }}>
+              Admin
+            </Link>
           ) : null}
 
           {ctx.user ? (

@@ -23,6 +23,7 @@ export const accountingManifest: ModuleManifest = {
     { key: 'accounts', label: 'Chart of Accounts', path: 'accounts', icon: 'list-tree', requires: 'accounts.manage', group: 'Ledger' },
     { key: 'journals', label: 'Journal Entries', path: 'journals', icon: 'book', requires: 'journals.manage', group: 'Ledger' },
     { key: 'periods', label: 'Periods', path: 'periods', icon: 'calendar', requires: 'periods.manage', group: 'Ledger' },
+    { key: 'transfers', label: 'Inter-company Transfers', path: 'transfers', icon: 'arrow-left-right', requires: 'journals.manage', group: 'Ledger' },
     { key: 'customers', label: 'Customers', path: 'customers', icon: 'users', requires: 'customers.manage', group: 'Receivables' },
     { key: 'invoices', label: 'Invoices', path: 'invoices', icon: 'file-text', requires: 'invoices.manage', group: 'Receivables' },
     { key: 'suppliers', label: 'Suppliers', path: 'suppliers', icon: 'truck', requires: 'suppliers.manage', group: 'Payables' },
