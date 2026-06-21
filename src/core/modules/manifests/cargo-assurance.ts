@@ -24,20 +24,13 @@ export const cargoAssuranceManifest: ModuleManifest = {
   status: 'beta',
   icon: 'droplet',
   enabledByDefault: false,
+  // Nav reflects shipped routes; import / data-review / analysis / assets / methods
+  // are added as the extraction + analytics pipeline ships (permissions already exist).
   navigation: [
     { key: 'portfolio', label: 'Portfolio Overview', path: '', icon: 'gauge', requires: 'cargo.reports.view' },
     { key: 'reviews', label: 'Assurance Reviews', path: 'reviews', icon: 'clipboard-check', requires: 'cargo.reviews.manage' },
-    { key: 'import', label: 'Import Documents', path: 'import', icon: 'upload', requires: 'cargo.documents.upload' },
-    { key: 'data-review', label: 'Data Review', path: 'data-review', icon: 'table', requires: 'cargo.data.review' },
-    { key: 'analysis', label: 'Analysis', path: 'analysis', icon: 'chart-line', requires: 'cargo.reports.view' },
-    { key: 'client-reports', label: 'Client Reports', path: 'client-reports', icon: 'file-bar-chart', requires: 'cargo.reports.view' },
-    { key: 'clients', label: 'Clients & Procedures', path: 'clients', icon: 'users', requires: 'cargo.config.manage', group: 'Configuration' },
-    { key: 'assets', label: 'Terminals, Vessels & Meters', path: 'assets', icon: 'ship', requires: 'cargo.assets.manage', group: 'Configuration' },
+    { key: 'clients', label: 'Clients', path: 'clients', icon: 'users', requires: 'cargo.config.manage', group: 'Configuration' },
     { key: 'cargo-types', label: 'Cargo Types', path: 'cargo-types', icon: 'droplet', requires: 'cargo.config.manage', group: 'Configuration' },
-    { key: 'methods', label: 'Calculation Methods', path: 'methods', icon: 'function', requires: 'cargo.config.manage', group: 'Configuration' },
-    { key: 'settings', label: 'Cargo Assurance Settings', path: 'settings', icon: 'settings', requires: 'cargo.config.manage', group: 'Configuration' },
-    // Supporting (not primary): per-loadout audit drilldown.
-    { key: 'loadout', label: 'Loadout Detail', path: 'loadouts', icon: 'search', requires: 'cargo.data.review', hidden: true },
   ],
   permissions: [
     { key: 'cargo.reviews.manage', name: 'Manage assurance reviews', description: 'Create and edit assurance reviews and scope', category: 'cargo' },

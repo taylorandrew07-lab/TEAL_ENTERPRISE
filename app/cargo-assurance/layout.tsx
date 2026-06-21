@@ -1,10 +1,10 @@
-// Cargo Assurance module shell. Navigation comes from the cargo-assurance manifest
-// via the registry, filtered by the user's permissions. RLS is authoritative.
-import { getPlatformContext } from '@/core/session/context';
+// Cargo Assurance module shell. Server-side guard runs before render; navigation
+// comes from the manifest via the registry.
+import { requireModule } from '@/core/session/guard';
 import { ModuleShell } from '@/core/ui';
 
 export default async function CargoAssuranceLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await getPlatformContext();
+  const ctx = await requireModule('cargo_assurance');
   return (
     <ModuleShell moduleKey="cargo_assurance" ctx={ctx}>
       {children}
