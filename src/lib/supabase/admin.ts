@@ -1,6 +1,8 @@
 // Service-role Supabase client. SERVER-ONLY. Bypasses RLS — use only in trusted
 // server contexts (e.g. controlled administrative tasks, webhooks). Never import
 // this into client components or expose the key to the browser.
+// `server-only` makes any client-component import a build-time error.
+import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 
 export function createAdminClient() {

@@ -28,11 +28,13 @@ enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000"]
 jwt_expiry = 3600
-enable_signup = true
+# Public self-signup is OFF: users are provisioned via invite / the service-role admin
+# flow. (Set the same toggle in the hosted dashboard: Authentication → Sign In / Providers.)
+enable_signup = false
 
 [auth.email]
-enable_signup = true
-enable_confirmations = false
+enable_signup = false
+enable_confirmations = true
 
 [storage]
 enabled = true
