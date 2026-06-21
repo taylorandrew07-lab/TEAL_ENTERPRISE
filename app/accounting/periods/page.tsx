@@ -1,4 +1,5 @@
 import { requireModule } from '@/core/session/guard';
+import { formatDate } from '@/lib/format';
 import { listPeriods, groupPeriodsByYear, type Period } from '@/modules/accounting/queries';
 import { createFiscalYear, setPeriodStatus } from '@/modules/accounting/actions';
 
@@ -60,7 +61,7 @@ export default async function PeriodsPage({ searchParams }: { searchParams: { er
                   <tr>
                     <th style={{ width: 56 }}>#</th>
                     <th>Period</th>
-                    <th>Dates</th>
+                    <th className="date">Dates</th>
                     <th style={{ width: 110 }}>Status</th>
                     <th style={{ width: 200 }}>Actions</th>
                   </tr>
@@ -70,8 +71,8 @@ export default async function PeriodsPage({ searchParams }: { searchParams: { er
                     <tr key={p.id}>
                       <td className="num">{p.period_no}</td>
                       <td style={{ fontWeight: 600 }}>{p.name}</td>
-                      <td className="muted num">
-                        {p.start_date} → {p.end_date}
+                      <td className="muted date">
+                        {formatDate(p.start_date)} → {formatDate(p.end_date)}
                       </td>
                       <td>
                         <StatusBadge status={p.status} />

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireModule } from '@/core/session/guard';
 import { ModuleEmptyState } from '@/core/ui';
+import { formatDate, formatMoney } from '@/lib/format';
 import {
   listAccounts,
   listPeriods,
@@ -10,9 +11,6 @@ import {
 } from '@/modules/accounting/queries';
 
 export const metadata = { title: 'Accounting — TEAL Enterprise' };
-
-const fmtMoney = (n: number, c: string) =>
-  new Intl.NumberFormat('en-TT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' ' + c;
 
 export default async function AccountingHome() {
   const ctx = await requireModule('accounting', 'reports.view');
@@ -57,13 +55,13 @@ export default async function AccountingHome() {
         />
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24, maxWidth: 880 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
             <Stat label="Accounts" value={String(accounts.length)} href="/accounting/accounts" />
             <Stat label="Open periods" value={String(openPeriods)} href="/accounting/periods" />
             <Stat label="Posted entries" value={String(posted.length)} href="/accounting/journals" />
             <Stat
               label="Trial balance"
-              value={tb.rows.length ? fmtMoney(tb.totalDebit, currency) : '—'}
+              value={tb.rows.length ? formatMoney(tb.totalDebit, currency) : '—'}
               badge={tb.rows.length ? (balanced ? { text: 'In balance', cls: 'badge-success' } : { text: 'Out of balance', cls: 'badge-danger' }) : undefined}
               href="/accounting/reports/trial-balance"
             />
@@ -77,23 +75,23 @@ export default async function AccountingHome() {
               </p>
             </div>
           ) : (
-            <div className="table-wrap" style={{ maxWidth: 720 }}>
+            <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th style={{ width: 110 }}>Date</th>
+                    <th className="date" style={{ width: 130 }}>Date</th>
                     <th style={{ width: 80 }}>No.</th>
                     <th>Description</th>
-                    <th className="num" style={{ width: 150 }}>Amount</th>
+                    <th className="num" style={{ width: 170 }}>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {posted.slice(0, 6).map((e) => (
                     <tr key={e.id}>
-                      <td className="num">{e.entry_date}</td>
+                      <td className="date">{formatDate(e.entry_date)}</td>
                       <td style={{ fontWeight: 600 }}>{e.entry_no}</td>
                       <td>{e.description ?? <span className="muted">(no description)</span>}</td>
-                      <td className="num">{fmtMoney(e.total, e.currency_code)}</td>
+                      <td className="num">{formatMoney(e.total, e.currency_code)}</td>
                     </tr>
                   ))}
                 </tbody>

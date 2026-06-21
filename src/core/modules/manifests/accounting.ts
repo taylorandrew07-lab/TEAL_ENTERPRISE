@@ -18,14 +18,21 @@ export const accountingManifest: ModuleManifest = {
   status: 'live',
   icon: 'ledger',
   enabledByDefault: true,
-  // Nav reflects the screens that exist today; AR/AP/banking/setup are added as
-  // they ship (their permissions already exist in the catalogue).
   navigation: [
     { key: 'dashboard', label: 'Dashboard', path: '', icon: 'gauge', requires: 'reports.view' },
     { key: 'accounts', label: 'Chart of Accounts', path: 'accounts', icon: 'list-tree', requires: 'accounts.manage', group: 'Ledger' },
     { key: 'journals', label: 'Journal Entries', path: 'journals', icon: 'book', requires: 'journals.manage', group: 'Ledger' },
     { key: 'periods', label: 'Periods', path: 'periods', icon: 'calendar', requires: 'periods.manage', group: 'Ledger' },
-    { key: 'reports', label: 'Reports', path: 'reports', icon: 'chart-bar', requires: 'reports.view', group: 'Reports' },
+    { key: 'customers', label: 'Customers', path: 'customers', icon: 'users', requires: 'customers.manage', group: 'Receivables' },
+    { key: 'invoices', label: 'Invoices', path: 'invoices', icon: 'file-text', requires: 'invoices.manage', group: 'Receivables' },
+    { key: 'suppliers', label: 'Suppliers', path: 'suppliers', icon: 'truck', requires: 'suppliers.manage', group: 'Payables' },
+    { key: 'bills', label: 'Bills', path: 'bills', icon: 'receipt', requires: 'bills.manage', group: 'Payables' },
+    { key: 'trial-balance', label: 'Trial Balance', path: 'reports/trial-balance', icon: 'scale', requires: 'reports.view', group: 'Reports' },
+    { key: 'profit-and-loss', label: 'Profit & Loss', path: 'reports/profit-and-loss', icon: 'trending-up', requires: 'reports.view', group: 'Reports' },
+    { key: 'balance-sheet', label: 'Balance Sheet', path: 'reports/balance-sheet', icon: 'columns', requires: 'reports.view', group: 'Reports' },
+    { key: 'general-ledger', label: 'General Ledger', path: 'reports/general-ledger', icon: 'book-open', requires: 'reports.view', group: 'Reports' },
+    { key: 'import', label: 'Import (AccountEdge)', path: 'import', icon: 'upload', requires: 'imports.manage', group: 'Data' },
+    { key: 'settings', label: 'Company Settings', path: 'settings', icon: 'settings', requires: 'company.manage', group: 'Setup' },
   ],
   permissions: [
     { key: 'accounts.manage', name: 'Manage chart of accounts', description: 'Create and edit GL accounts', category: 'accounting' },

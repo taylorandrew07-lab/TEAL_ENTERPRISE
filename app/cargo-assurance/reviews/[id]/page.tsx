@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireModule } from '@/core/session/guard';
+import { formatDate } from '@/lib/format';
 import { getReview } from '@/modules/cargo-assurance/queries';
 import { setReviewStatus } from '@/modules/cargo-assurance/actions';
 import { ReviewStatusBadge, nextReviewStep } from '@/modules/cargo-assurance/status';
@@ -28,7 +29,7 @@ export default async function ReviewDetailPage({
           </div>
           <h1 style={{ fontSize: 'var(--text-2xl)', marginTop: 6 }}>{review.title}</h1>
           <p className="muted" style={{ margin: '6px 0 0' }}>
-            {review.clientName ?? '—'} · {review.start_date} → {review.end_date} · {review.quantity_basis}
+            {review.clientName ?? '—'} · {formatDate(review.start_date)} → {formatDate(review.end_date)} · {review.quantity_basis}
             {review.cargo_type?.name ? ` · ${review.cargo_type.name}` : ''}
           </p>
         </div>

@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import { requireModule } from '@/core/session/guard';
+import { formatDate, formatMoney } from '@/lib/format';
 import { listJournalEntries, type JournalEntryRow } from '@/modules/accounting/queries';
 import { reverseJournalEntry } from '@/modules/accounting/actions';
 
 export const metadata = { title: 'Journal Entries — TEAL Accounting' };
-
-const fmtMoney = (n: number, c: string) =>
-  new Intl.NumberFormat('en-TT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' ' + c;
 
 export default async function JournalsPage({ searchParams }: { searchParams: { error?: string } }) {
   await requireModule('accounting', 'journals.manage');
@@ -50,7 +48,7 @@ export default async function JournalsPage({ searchParams }: { searchParams: { e
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: 110 }}>Date</th>
+                <th className="date" style={{ width: 110 }}>Date</th>
                 <th style={{ width: 90 }}>No.</th>
                 <th>Description</th>
                 <th style={{ width: 100 }}>Status</th>
@@ -61,13 +59,13 @@ export default async function JournalsPage({ searchParams }: { searchParams: { e
             <tbody>
               {entries.map((e) => (
                 <tr key={e.id}>
-                  <td className="num">{e.entry_date}</td>
+                  <td className="date">{formatDate(e.entry_date)}</td>
                   <td style={{ fontWeight: 600 }}>{e.entry_no ?? '—'}</td>
                   <td>{e.description ?? <span className="muted">(no description)</span>}</td>
                   <td>
                     <EntryStatus status={e.status} />
                   </td>
-                  <td className="num">{fmtMoney(e.total, e.currency_code)}</td>
+                  <td className="num">{formatMoney(e.total, e.currency_code)}</td>
                   <td>
                     {e.status === 'posted' ? (
                       <form action={reverseJournalEntry}>

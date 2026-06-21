@@ -38,7 +38,7 @@ export default async function TrialBalancePage() {
           </p>
         </div>
       ) : (
-        <div className="table-wrap" style={{ maxWidth: 720 }}>
+        <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>

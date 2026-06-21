@@ -373,8 +373,18 @@ td.num,
   font-weight: 600;
 }
 .module-main {
-  padding: 26px 30px;
+  padding: 26px 34px;
   min-width: 0;
+}
+/* Content uses the available desktop width (capped for readability, centered). */
+.module-main > * {
+  max-width: 1320px;
+  margin-inline: auto;
+}
+/* Date cells shouldn't wrap. */
+.table td.date,
+.table th.date {
+  white-space: nowrap;
 }
 
 @media (max-width: 860px) {

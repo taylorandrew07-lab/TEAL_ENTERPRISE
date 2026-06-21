@@ -6,9 +6,9 @@ export const metadata = { title: 'Reports — TEAL Accounting' };
 
 const REPORTS = [
   { href: '/accounting/reports/trial-balance', name: 'Trial Balance', desc: 'Every account’s balance from posted entries; debits must equal credits.', ready: true },
-  { href: '#', name: 'Profit & Loss', desc: 'Income and expenses over a period.', ready: false },
-  { href: '#', name: 'Balance Sheet', desc: 'Assets, liabilities and equity as at a date.', ready: false },
-  { href: '#', name: 'General Ledger detail', desc: 'Every posted line by account.', ready: false },
+  { href: '/accounting/reports/profit-and-loss', name: 'Profit & Loss', desc: 'Income and expenses over a period.', ready: true },
+  { href: '/accounting/reports/balance-sheet', name: 'Balance Sheet', desc: 'Assets, liabilities and equity as at a date.', ready: true },
+  { href: '/accounting/reports/general-ledger', name: 'General Ledger detail', desc: 'Every posted line by account.', ready: true },
 ];
 
 export default async function ReportsPage() {

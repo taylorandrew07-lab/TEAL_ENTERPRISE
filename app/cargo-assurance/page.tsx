@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { requireModule } from '@/core/session/guard';
+import { formatDate } from '@/lib/format';
 import { listReviews } from '@/modules/cargo-assurance/queries';
 import { ReviewStatusBadge } from '@/modules/cargo-assurance/status';
 
@@ -53,7 +54,7 @@ export default async function CargoPortfolio() {
                 <tr>
                   <th>Review</th>
                   <th style={{ width: 170 }}>Client</th>
-                  <th style={{ width: 190 }}>Period</th>
+                  <th className="date" style={{ width: 190 }}>Period</th>
                   <th style={{ width: 120 }}>Status</th>
                 </tr>
               </thead>
@@ -64,7 +65,7 @@ export default async function CargoPortfolio() {
                       <Link href={`/cargo-assurance/reviews/${r.id}`}>{r.title}</Link>
                     </td>
                     <td>{r.clientName ?? <span className="muted">—</span>}</td>
-                    <td className="muted num">{r.start_date} → {r.end_date}</td>
+                    <td className="muted date">{formatDate(r.start_date)} → {formatDate(r.end_date)}</td>
                     <td><ReviewStatusBadge status={r.status} /></td>
                   </tr>
                 ))}
