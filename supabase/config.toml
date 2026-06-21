@@ -5,9 +5,9 @@ project_id = "teal-enterprise"
 [api]
 enabled = true
 port = 54321
-# Expose both module schemas to PostgREST, plus storage/graphql defaults.
-schemas = ["public", "core", "accounting"]
-extra_search_path = ["public", "core", "accounting"]
+# Expose the platform + module schemas to PostgREST (the app queries them with RLS).
+schemas = ["public", "graphql_public", "core", "accounting", "cargo"]
+extra_search_path = ["public", "core", "accounting", "cargo"]
 max_rows = 1000
 
 [db]

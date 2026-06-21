@@ -72,7 +72,8 @@
   --text-3xl: 1.875rem;
 
   --header-h: 56px;
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* --font-sans is provided by next/font (Inter) on <html>; do NOT hardcode it here
+     or it overrides the Inter variable. The body rule below supplies a system fallback. */
 }
 
 *,
@@ -89,7 +90,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans, system-ui), -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--text-base);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
