@@ -1,6 +1,7 @@
 import { requireModule } from '@/core/session/guard';
-import { listParallelRates, listCurrencyCodes, addParallelRate } from '@/modules/accounting/rates';
+import { listParallelRates, listCurrencyCodes, addParallelRate, deleteParallelRate } from '@/modules/accounting/rates';
 import { formatDate } from '@/lib/format';
+import { DeleteButton } from '@/core/ui/DeleteButton';
 
 export const metadata = { title: 'Parallel FX Rates — TEAL Accounting' };
 
@@ -74,6 +75,7 @@ export default async function ParallelRatesPage({ searchParams }: { searchParams
                 <th className="num">Spread</th>
                 <th className="num">%</th>
                 <th>Note</th>
+                <th style={{ width: 60 }} />
               </tr>
             </thead>
             <tbody>
@@ -88,6 +90,7 @@ export default async function ParallelRatesPage({ searchParams }: { searchParams
                     {r.spread_pct > 0 ? '+' : ''}{r.spread_pct.toFixed(1)}%
                   </td>
                   <td className="muted">{r.note ?? '—'}</td>
+                  <td><DeleteButton action={deleteParallelRate} fields={{ id: r.id }} confirm="Delete this parallel rate?" /></td>
                 </tr>
               ))}
             </tbody>

@@ -1,6 +1,7 @@
 import { requireModule } from '@/core/session/guard';
-import { listExchangeRates, listCurrencyCodes, addExchangeRate } from '@/modules/accounting/rates';
+import { listExchangeRates, listCurrencyCodes, addExchangeRate, deleteExchangeRate } from '@/modules/accounting/rates';
 import { formatDate } from '@/lib/format';
+import { DeleteButton } from '@/core/ui/DeleteButton';
 
 export const metadata = { title: 'Exchange Rates — TEAL Accounting' };
 
@@ -54,6 +55,7 @@ export default async function ExchangeRatesPage({ searchParams }: { searchParams
                 <th className="date" style={{ width: 130 }}>Date</th>
                 <th>Pair</th>
                 <th className="num" style={{ width: 170 }}>Rate</th>
+                <th style={{ width: 60 }} />
               </tr>
             </thead>
             <tbody>
@@ -62,6 +64,7 @@ export default async function ExchangeRatesPage({ searchParams }: { searchParams
                   <td className="date">{formatDate(r.rate_date)}</td>
                   <td>{r.from_currency} → {r.to_currency}</td>
                   <td className="num">{r.rate.toLocaleString('en-TT', { minimumFractionDigits: 4, maximumFractionDigits: 6 })}</td>
+                  <td><DeleteButton action={deleteExchangeRate} fields={{ id: r.id }} confirm="Delete this exchange rate?" /></td>
                 </tr>
               ))}
             </tbody>

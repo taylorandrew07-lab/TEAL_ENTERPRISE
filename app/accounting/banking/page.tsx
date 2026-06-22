@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { requireModule } from '@/core/session/guard';
-import { listBanks, addBank, addAccount, listCurrencyCodes, listGlAssetAccounts } from '@/modules/accounting/banking';
+import { listBanks, addBank, addAccount, listCurrencyCodes, listGlAssetAccounts, deleteBank } from '@/modules/accounting/banking';
 import { formatMoney } from '@/lib/format';
+import { DeleteButton } from '@/core/ui/DeleteButton';
 
 export const metadata = { title: 'Bank Accounts — TEAL Accounting' };
 
@@ -87,7 +88,11 @@ export default async function BankingPage({ searchParams }: { searchParams: { er
         <div style={{ display: 'grid', gap: 18, maxWidth: 860 }}>
           {banks.map((b) => (
             <div key={b.id}>
-              <h2 style={{ fontSize: 'var(--text-lg)', margin: '0 0 8px' }}>{b.name}</h2>
+              <div className="row" style={{ justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                <h2 style={{ fontSize: 'var(--text-lg)', margin: 0 }}>{b.name}</h2>
+                <DeleteButton action={deleteBank} fields={{ id: b.id }} label="Delete bank"
+                  confirm={`Delete "${b.name}" and all its accounts, statements and transactions? This can’t be undone.`} />
+              </div>
               {b.accounts.length === 0 ? (
                 <p className="muted" style={{ fontSize: 'var(--text-sm)', margin: 0 }}>No accounts yet — add one above.</p>
               ) : (

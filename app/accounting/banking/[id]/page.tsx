@@ -10,8 +10,14 @@ import {
   updateBalance,
   addTransaction,
   uploadStatement,
+  matchTransaction,
+  deleteTransaction,
+  deleteStatement,
+  deleteAccount,
 } from '@/modules/accounting/banking';
+import { suggestMatch } from '@/modules/accounting/banking-types';
 import { formatMoney, formatDate } from '@/lib/format';
+import { DeleteButton } from '@/core/ui/DeleteButton';
 import { MatchSelect } from './MatchSelect';
 
 export const metadata = { title: 'Bank Account — TEAL Accounting' };
@@ -41,7 +47,11 @@ export default async function BankAccountPage({ params, searchParams }: { params
             {cur}{account.account_number ? ` · ${account.account_number}` : ''}
           </p>
         </div>
-        <span className="badge badge-brand" style={{ alignSelf: 'start' }}>Private</span>
+        <div className="row" style={{ gap: 10, alignSelf: 'start' }}>
+          <span className="badge badge-brand">Private</span>
+          <DeleteButton action={deleteAccount} fields={{ id: account.id }} label="Delete account"
+            confirm={`Delete "${account.name}" and all its statements and transactions? This can’t be undone.`} />
+        </div>
       </div>
 
       {error ? (
@@ -84,7 +94,11 @@ export default async function BankAccountPage({ params, searchParams }: { params
             {statements.map((s) => (
               <div key={s.id} className="row" style={{ justifyContent: 'space-between', gap: 10, fontSize: 'var(--text-sm)' }}>
                 <span>{s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.filename}</a> : s.filename}</span>
-                <span className="muted">{formatDate(s.created_at)}</span>
+                <span className="row" style={{ gap: 8 }}>
+                  <span className="muted">{formatDate(s.created_at)}</span>
+                  <DeleteButton action={deleteStatement} fields={{ id: s.id, account_id: account.id }}
+                    confirm="Delete this statement and its file? (Any imported transactions remain.)" />
+                </span>
               </div>
             ))}
           </div>
@@ -120,12 +134,14 @@ export default async function BankAccountPage({ params, searchParams }: { params
                 <th className="date" style={{ width: 120 }}>Date</th>
                 <th>Description</th>
                 <th className="num" style={{ width: 150 }}>Amount</th>
-                <th style={{ width: 200 }}>Matched to</th>
+                <th style={{ width: 230 }}>Matched to</th>
+                <th style={{ width: 44 }} />
               </tr>
             </thead>
             <tbody>
               {txns.map((t) => {
                 const current = t.matched_bill_id ? `bill:${t.matched_bill_id}` : t.matched_invoice_id ? `invoice:${t.matched_invoice_id}` : '';
+                const suggestion = current ? null : suggestMatch(t, targets);
                 return (
                   <tr key={t.id}>
                     <td className="date">{formatDate(t.txn_date)}</td>
@@ -133,7 +149,22 @@ export default async function BankAccountPage({ params, searchParams }: { params
                     <td className="num" style={{ color: t.amount < 0 ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>
                       {t.amount < 0 ? '' : '+'}{formatMoney(t.amount, cur)}
                     </td>
-                    <td><MatchSelect txnId={t.id} accountId={account.id} current={current} targets={targets} /></td>
+                    <td>
+                      {suggestion ? (
+                        <form action={matchTransaction} style={{ marginBottom: 5 }}>
+                          <input type="hidden" name="txn_id" value={t.id} />
+                          <input type="hidden" name="account_id" value={account.id} />
+                          <input type="hidden" name="target" value={suggestion.value} />
+                          <button type="submit" className="btn btn-ghost btn-sm" style={{ color: 'var(--primary-strong)', fontSize: 'var(--text-xs)' }} title="Accept suggested match">
+                            ✓ Match: {suggestion.label}
+                          </button>
+                        </form>
+                      ) : null}
+                      <MatchSelect txnId={t.id} accountId={account.id} current={current} targets={targets} />
+                    </td>
+                    <td>
+                      <DeleteButton action={deleteTransaction} fields={{ id: t.id, account_id: account.id }} label="✕" confirm="Delete this transaction?" />
+                    </td>
                   </tr>
                 );
               })}

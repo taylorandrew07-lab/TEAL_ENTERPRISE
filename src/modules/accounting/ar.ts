@@ -292,6 +292,30 @@ export async function addCustomer(formData: FormData): Promise<void> {
   back('/accounting/customers');
 }
 
+export async function deleteCustomer(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/customers');
+  const id = String(formData.get('id') ?? '');
+  if (id) {
+    const { error } = await acc.from('customers').delete().eq('id', id).eq('company_id', companyId);
+    if (error) back('/accounting/customers', error.code === '23503' ? 'Can’t delete: this customer has invoices. Void those first.' : error.message);
+  }
+  revalidatePath('/accounting/customers');
+  back('/accounting/customers');
+}
+
+export async function deleteTaxCode(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/tax-codes');
+  const id = String(formData.get('id') ?? '');
+  if (id) {
+    const { error } = await acc.from('tax_codes').delete().eq('id', id).eq('company_id', companyId);
+    if (error) back('/accounting/tax-codes', error.code === '23503' ? 'Can’t delete: this tax code is used on invoices.' : error.message);
+  }
+  revalidatePath('/accounting/tax-codes');
+  back('/accounting/tax-codes');
+}
+
 export async function addTaxCode(formData: FormData): Promise<void> {
   const { acc, companyId } = await accountingDb();
   if (!companyId) back('/accounting/tax-codes', 'No active company');

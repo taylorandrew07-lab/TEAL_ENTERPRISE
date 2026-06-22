@@ -138,6 +138,24 @@ export async function addParallelRate(formData: FormData): Promise<void> {
   back('/accounting/parallel-rates');
 }
 
+export async function deleteExchangeRate(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/exchange-rates');
+  const id = String(formData.get('id') ?? '');
+  if (id) await acc.from('exchange_rates').delete().eq('id', id).eq('company_id', companyId);
+  revalidatePath('/accounting/exchange-rates');
+  back('/accounting/exchange-rates');
+}
+
+export async function deleteParallelRate(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/parallel-rates');
+  const id = String(formData.get('id') ?? '');
+  if (id) await acc.from('parallel_rates').delete().eq('id', id).eq('company_id', companyId);
+  revalidatePath('/accounting/parallel-rates');
+  back('/accounting/parallel-rates');
+}
+
 // -----------------------------------------------------------------------------
 // VAT position (output vs input/recoverable) — private overlay
 // -----------------------------------------------------------------------------

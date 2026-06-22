@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { requireModule } from '@/core/session/guard';
-import { listCustomers, listReceivableAccounts, addCustomer } from '@/modules/accounting/ar';
+import { listCustomers, listReceivableAccounts, addCustomer, deleteCustomer } from '@/modules/accounting/ar';
+import { DeleteButton } from '@/core/ui/DeleteButton';
 
 export const metadata = { title: 'Customers — TEAL Accounting' };
 
@@ -50,6 +51,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
                 <th>Email</th>
                 <th>Receivable account</th>
                 <th style={{ width: 90 }}>Currency</th>
+                <th style={{ width: 60 }} />
               </tr>
             </thead>
             <tbody>
@@ -64,6 +66,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
                     <td className="muted">{c.email ?? '—'}</td>
                     <td className="muted">{ar ? `${ar.code} · ${ar.name}` : '—'}</td>
                     <td>{c.currency_code ?? '—'}</td>
+                    <td><DeleteButton action={deleteCustomer} fields={{ id: c.id }} confirm={`Delete customer "${c.name}"?`} /></td>
                   </tr>
                 );
               })}

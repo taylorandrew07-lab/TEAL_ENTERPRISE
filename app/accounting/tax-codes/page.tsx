@@ -1,5 +1,6 @@
 import { requireModule } from '@/core/session/guard';
-import { listTaxCodes, listLiabilityAccounts, addTaxCode } from '@/modules/accounting/ar';
+import { listTaxCodes, listLiabilityAccounts, addTaxCode, deleteTaxCode } from '@/modules/accounting/ar';
+import { DeleteButton } from '@/core/ui/DeleteButton';
 
 export const metadata = { title: 'Tax Codes — TEAL Accounting' };
 
@@ -78,6 +79,7 @@ export default async function TaxCodesPage({ searchParams }: { searchParams: { e
                 <th>Name</th>
                 <th className="num" style={{ width: 100 }}>Rate</th>
                 <th style={{ width: 90 }}>Posts?</th>
+                <th style={{ width: 60 }} />
               </tr>
             </thead>
             <tbody>
@@ -93,6 +95,7 @@ export default async function TaxCodesPage({ searchParams }: { searchParams: { e
                       <span className="badge badge-warning">No account</span>
                     )}
                   </td>
+                  <td><DeleteButton action={deleteTaxCode} fields={{ id: t.id }} confirm={`Delete tax code "${t.code}"?`} /></td>
                 </tr>
               ))}
             </tbody>

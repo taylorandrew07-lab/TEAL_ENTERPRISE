@@ -8,6 +8,19 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { accountingDb } from './context';
 
+export async function deleteSupplier(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  const id = String(formData.get('id') ?? '');
+  if (companyId && id) {
+    const { error } = await acc.from('suppliers').delete().eq('id', id).eq('company_id', companyId);
+    if (error) {
+      redirect('/accounting/suppliers?error=' + encodeURIComponent(error.code === '23503' ? 'Can’t delete: this supplier has bills. Void those first.' : error.message));
+    }
+  }
+  revalidatePath('/accounting/suppliers');
+  redirect('/accounting/suppliers');
+}
+
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------

@@ -105,12 +105,28 @@ export async function listMatchTargets(): Promise<MatchTarget[]> {
   const { acc, companyId } = await accountingDb();
   if (!companyId) return [];
   const [{ data: bills }, { data: invoices }] = await Promise.all([
-    acc.from('bills').select('id, bill_no, total, status, supplier:suppliers(name)').eq('company_id', companyId).in('status', ['open', 'partial']).limit(200),
-    acc.from('invoices').select('id, invoice_no, total, status, customer:customers(name)').eq('company_id', companyId).in('status', ['open', 'partial']).limit(200),
+    acc.from('bills').select('id, bill_no, total, bill_date, due_date, status, supplier:suppliers(name)').eq('company_id', companyId).in('status', ['open', 'partial']).limit(300),
+    acc.from('invoices').select('id, invoice_no, total, invoice_date, due_date, status, customer:customers(name)').eq('company_id', companyId).in('status', ['open', 'partial']).limit(300),
   ]);
   const out: MatchTarget[] = [];
-  for (const b of (bills as any[] | null) ?? []) out.push({ value: `bill:${b.id}`, label: `Bill ${b.bill_no ?? ''} · ${b.supplier?.name ?? ''} · ${Number(b.total).toFixed(2)}`.replace(/\s+·\s+·/g, ' ·') });
-  for (const i of (invoices as any[] | null) ?? []) out.push({ value: `invoice:${i.id}`, label: `Invoice ${i.invoice_no ?? ''} · ${i.customer?.name ?? ''} · ${Number(i.total).toFixed(2)}`.replace(/\s+·\s+·/g, ' ·') });
+  for (const b of (bills as any[] | null) ?? []) {
+    out.push({
+      value: `bill:${b.id}`,
+      label: `Bill ${b.bill_no ?? ''} · ${b.supplier?.name ?? ''} · ${Number(b.total).toFixed(2)}`.replace(/\s+·\s+·/g, ' ·'),
+      kind: 'bill',
+      amount: Number(b.total || 0),
+      date: b.due_date ?? b.bill_date,
+    });
+  }
+  for (const i of (invoices as any[] | null) ?? []) {
+    out.push({
+      value: `invoice:${i.id}`,
+      label: `Invoice ${i.invoice_no ?? ''} · ${i.customer?.name ?? ''} · ${Number(i.total).toFixed(2)}`.replace(/\s+·\s+·/g, ' ·'),
+      kind: 'invoice',
+      amount: Number(i.total || 0),
+      date: i.due_date ?? i.invoice_date,
+    });
+  }
   return out;
 }
 
@@ -211,6 +227,62 @@ export async function matchTransaction(formData: FormData): Promise<void> {
   if (error) back(`/accounting/banking/${accountId}`, error.message);
   revalidatePath(`/accounting/banking/${accountId}`);
   back(`/accounting/banking/${accountId}`);
+}
+
+export async function deleteTransaction(formData: FormData): Promise<void> {
+  const { acc, companyId } = await accountingDb();
+  if (!companyId) back('/accounting/banking');
+  const id = String(formData.get('id') ?? '');
+  const accountId = String(formData.get('account_id') ?? '');
+  if (id) await acc.from('treasury_transactions').delete().eq('id', id).eq('company_id', companyId);
+  revalidatePath(`/accounting/banking/${accountId}`);
+  back(`/accounting/banking/${accountId}`);
+}
+
+export async function deleteStatement(formData: FormData): Promise<void> {
+  const { acc, companyId, supabase } = await accountingDb();
+  if (!companyId) back('/accounting/banking');
+  const id = String(formData.get('id') ?? '');
+  const accountId = String(formData.get('account_id') ?? '');
+  if (id) {
+    const { data } = await acc.from('treasury_statements').select('storage_path').eq('id', id).eq('company_id', companyId).maybeSingle();
+    if ((data as any)?.storage_path) await supabase.storage.from('statements').remove([(data as any).storage_path]);
+    await acc.from('treasury_statements').delete().eq('id', id).eq('company_id', companyId);
+  }
+  revalidatePath(`/accounting/banking/${accountId}`);
+  back(`/accounting/banking/${accountId}`);
+}
+
+export async function deleteAccount(formData: FormData): Promise<void> {
+  const { acc, companyId, supabase } = await accountingDb();
+  if (!companyId) back('/accounting/banking');
+  const id = String(formData.get('id') ?? '');
+  if (id) {
+    const { data: stmts } = await acc.from('treasury_statements').select('storage_path').eq('account_id', id).eq('company_id', companyId);
+    const paths = ((stmts as any[] | null) ?? []).map((s) => s.storage_path).filter(Boolean);
+    if (paths.length) await supabase.storage.from('statements').remove(paths);
+    await acc.from('treasury_accounts').delete().eq('id', id).eq('company_id', companyId); // cascades statements + transactions
+  }
+  revalidatePath('/accounting/banking');
+  back('/accounting/banking');
+}
+
+export async function deleteBank(formData: FormData): Promise<void> {
+  const { acc, companyId, supabase } = await accountingDb();
+  if (!companyId) back('/accounting/banking');
+  const id = String(formData.get('id') ?? '');
+  if (id) {
+    const { data: accts } = await acc.from('treasury_accounts').select('id').eq('bank_id', id).eq('company_id', companyId);
+    const acctIds = ((accts as any[] | null) ?? []).map((a) => a.id);
+    if (acctIds.length) {
+      const { data: stmts } = await acc.from('treasury_statements').select('storage_path').in('account_id', acctIds);
+      const paths = ((stmts as any[] | null) ?? []).map((s) => s.storage_path).filter(Boolean);
+      if (paths.length) await supabase.storage.from('statements').remove(paths);
+    }
+    await acc.from('treasury_banks').delete().eq('id', id).eq('company_id', companyId); // cascades accounts → statements + transactions
+  }
+  revalidatePath('/accounting/banking');
+  back('/accounting/banking');
 }
 
 /** Upload a statement: store the file privately, and best-effort parse CSV/TSV rows into transactions. */

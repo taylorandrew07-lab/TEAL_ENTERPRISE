@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { requireModule } from '@/core/session/guard';
-import { listSuppliers, listPayableAccounts, addSupplier } from '@/modules/accounting/ap';
+import { listSuppliers, listPayableAccounts, addSupplier, deleteSupplier } from '@/modules/accounting/ap';
+import { DeleteButton } from '@/core/ui/DeleteButton';
 
 export const metadata = { title: 'Suppliers — TEAL Accounting' };
 
@@ -48,6 +49,7 @@ export default async function SuppliersPage({ searchParams }: { searchParams: { 
                 <th>Email</th>
                 <th>Payable account</th>
                 <th style={{ width: 100 }}>Status</th>
+                <th style={{ width: 60 }} />
               </tr>
             </thead>
             <tbody>
@@ -68,6 +70,7 @@ export default async function SuppliersPage({ searchParams }: { searchParams: { 
                         <span className="badge badge-neutral">Inactive</span>
                       )}
                     </td>
+                    <td><DeleteButton action={deleteSupplier} fields={{ id: s.id }} confirm={`Delete supplier "${s.name}"?`} /></td>
                   </tr>
                 );
               })}
