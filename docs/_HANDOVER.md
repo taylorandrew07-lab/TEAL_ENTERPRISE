@@ -254,6 +254,19 @@ ops users (write ai_jobs via service role/SECURITY DEFINER, or add a member-inse
 daily pg_cron sweep calling enqueue_notification (refactor the threshold math into a shared fn). (c) Full
 multi-customer portal switcher (today: all names shown, shipments span all, but prefs only for customers[0]).
 
+## 7e. INDEPENDENT (CODEX) REVIEW — 1 real P0 found & fixed (2026-06-30)
+A cross-check by Codex caught a **P0 the internal workflow missed**: `freight.enqueue_notification` (SECURITY
+DEFINER) kept its default PUBLIC execute grant and the freight schema is REST-exposed, so it was callable by
+ANYONE — verified reachable by an anonymous `POST /rest/v1/rpc/enqueue_notification` (HTTP 204) — letting a caller
+inject attacker-controlled in-app notifications + queued customer emails for any shipment UUID. **Fixed (0040):**
+revoked execute from public/anon/authenticated (triggers call it as owner, unaffected; verified anon now gets 401
+and the trigger path still passes the stage-automation DB test). Also locked seed_task/seed_milestone and tightened
+`freight.ai_task_settings` SELECT to `freight.ai.manage`. `approveAiJob` now refuses tool-call jobs (no false
+'done'). **LESSON for future reviews:** explicitly audit EVERY `SECURITY DEFINER` function for a matching
+`revoke execute` — directly-callable definer RPCs are a distinct attack surface from RLS/views (mirror 0031/0040).
+Codex's other findings were assessed as accurate-but-not-leaks (portal base-table reads are self-RLS-scoped;
+multi-customer is by design) or low-risk P2s (view column exposure, per-contact read-state).
+
 ## 8. Next work (priority order)
 1. **Efficiency-audit cleanup — DONE** (see §7). **Customer portal — DONE & live** (see §7b). **AI infrastructure
    — DONE & live, dormant** (see §7c).
