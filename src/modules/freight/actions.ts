@@ -434,6 +434,14 @@ export async function pushQuoteToCharges(formData: FormData): Promise<void> {
   const { data: lines } = await freight.from('quote_lines')
     .select('description, charge_code, amount, currency_code, id').eq('company_id', companyId).eq('customer_quote_id', id);
 
+  // Idempotency (F-09): if any of this quote's lines are already on the shipment as
+  // charges, it was posted before — don't double-count revenue/cost.
+  const lineIds = ((lines as any[] | null) ?? []).map((l) => l.id);
+  if (lineIds.length) {
+    const { data: already } = await freight.from('charges').select('id').eq('company_id', companyId).in('quote_line_id', lineIds).limit(1);
+    if ((already as any[] | null)?.length) back(`/freight/quotes/customer/${id}`, 'This quotation has already been posted to the shipment charges');
+  }
+
   const chargeRows = ((lines as any[] | null) ?? []).map((l) => ({
     company_id: companyId, shipment_id: quote.shipment_id, kind: 'charge',
     description: l.description, charge_code: l.charge_code,
@@ -645,7 +653,7 @@ export async function releaseShipment(formData: FormData): Promise<void> {
   }
 
   const { error } = await freight.from('shipment_billing').upsert({
-    company_id: companyId, shipment_id, released: true,
+    company_id: companyId, shipment_id, released: true, released_override: override,
     released_at: new Date().toISOString(), released_by: ctx.user?.id ?? null,
   }, { onConflict: 'company_id,shipment_id' });
   if (error) back(`/freight/shipments/${shipment_id}`, error.message);

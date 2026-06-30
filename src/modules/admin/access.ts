@@ -17,9 +17,10 @@ import { can } from '@/core/session/types';
 import { MODULES, getModule } from '@/core/modules/registry';
 
 // "Full access" template granted on approval (owner: access to a module = full access).
+// Keyed by MODULE KEY (registry), not schema name — note cargo's key is 'cargo_assurance'.
 const MODULE_FULL_ROLE: Record<string, string> = {
   freight: 'freight_admin',
-  cargo: 'ca_admin',
+  cargo_assurance: 'ca_admin',
   accounting: 'accountant',
 };
 
@@ -83,17 +84,19 @@ export async function listPendingAccessRequests(): Promise<AccessRequestRow[]> {
 
 // ----------------------------------------------------------------------------- grant helper
 async function grantUserModule(core: any, userId: string, companyId: string, moduleKey: string, grantedBy: string): Promise<void> {
-  // 1) the read gate
-  await core.from('user_module_access')
+  // 1) the read gate — fail loudly if RLS blocks it (F-07: never silently "approve"
+  // without actually granting access).
+  const { error: umaErr } = await core.from('user_module_access')
     .upsert({ user_id: userId, company_id: companyId, module_key: moduleKey, granted_by: grantedBy },
       { onConflict: 'user_id,company_id,module_key', ignoreDuplicates: true });
+  if (umaErr) throw new Error(`Could not grant module access: ${umaErr.message}`);
 
   // 2) capabilities — seed the module's full role template onto the membership (additive)
   const roleKey = MODULE_FULL_ROLE[moduleKey];
   if (!roleKey) return;
   const { data: membership } = await core.from('company_memberships')
     .select('id').eq('company_id', companyId).eq('user_id', userId).maybeSingle();
-  if (!membership) return;
+  if (!membership) throw new Error('User is not a member of this company');
   const { data: role } = await core.from('roles').select('id').eq('key', roleKey).is('company_id', null).maybeSingle();
   if (!role) return;
   const { data: rolePerms } = await core.from('role_permissions').select('permission_id').eq('role_id', (role as any).id);
@@ -102,7 +105,10 @@ async function grantUserModule(core: any, userId: string, companyId: string, mod
   const { data: existing } = await core.from('membership_permissions').select('permission_id').eq('membership_id', (membership as any).id);
   const have = new Set(((existing as any[] | null) ?? []).map((r) => r.permission_id));
   const toAdd = wanted.filter((id) => !have.has(id)).map((permission_id) => ({ membership_id: (membership as any).id, permission_id, granted_by: grantedBy }));
-  if (toAdd.length) await core.from('membership_permissions').insert(toAdd);
+  if (toAdd.length) {
+    const { error: mpErr } = await core.from('membership_permissions').insert(toAdd);
+    if (mpErr) throw new Error(`Module access granted, but seeding permissions failed: ${mpErr.message}`);
+  }
 }
 
 // ----------------------------------------------------------------------------- actions (form-friendly)

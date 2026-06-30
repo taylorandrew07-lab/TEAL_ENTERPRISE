@@ -83,9 +83,17 @@ await c.query(
 
 await c.query(
   `insert into core.company_modules (company_id, module_id, enabled)
-   select $1, m.id, true from core.modules m where m.key in ('accounting', 'cargo_assurance')
+   select $1, m.id, true from core.modules m where m.key in ('accounting', 'cargo_assurance', 'freight')
    on conflict (company_id, module_id) do update set enabled = true`,
   [companyId],
+);
+
+// Designate the protected owner if not already set (F-03: never leave it null).
+await c.query(
+  `insert into core.platform_settings (id, protected_super_admin_id) values (1, $1)
+   on conflict (id) do update
+     set protected_super_admin_id = coalesce(core.platform_settings.protected_super_admin_id, excluded.protected_super_admin_id)`,
+  [userId],
 );
 
 const n = (await c.query(
