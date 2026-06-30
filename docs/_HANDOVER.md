@@ -99,7 +99,7 @@ End-to-end single workflow: **enquiry/RFQ → supplier quotes → customer quota
 
 ---
 
-## 5. Migrations (freight + security), 0019→0037
+## 5. Migrations (freight + security), 0019→0038
 (0033 client_access+user_customer_ids · 0034 portal_* views · 0035 notification prefs/read-state/portal-notif
 view+fns · 0036 notification triggers + re-created apply_stage_automation · 0037 restore service_role grants on
 app schemas — see §7b.)
@@ -206,8 +206,41 @@ invoice/payment + free-time/demurrage (incl. penalty) + client-visible docs; **i
   — internal-uploaded docs have bytes so it's fine) and the browser pixel rendering of the portal pages (the
   underlying queries are all proven). Confirm both when onboarding the first real customer.
 
+## 7c. PROVIDER-AGNOSTIC AI INFRASTRUCTURE — SHIPPED & LIVE (2026-06-30, dormant)
+Owner wants AI but **provider-agnostic** ("any AI, any model"), with **per-task model tiering** (cheap models
+for simple tasks, premium reserved) so it's cheap + swappable. Built the full plumbing; **no business tasks
+wired yet** (owner chose "pure infrastructure only"). Nothing calls a model until a provider key is set AND a
+task is switched on. Pattern mirrors the email NoopSender.
+- **`src/core/ai/`** — provider-agnostic interface (normalised messages/tools/tool-calls/structured-output).
+  Adapters over raw `fetch` (ZERO new deps): `providers/anthropic.ts` (native) + `providers/openai-compatible.ts`
+  reaching **OpenAI, DeepSeek, Gemini (its OpenAI endpoint), GLM/Z.ai** — and any OpenAI-compatible base
+  (Groq/Together/OpenRouter/Ollama) via an env base-URL override. `providers/noop.ts` default. `registry.ts`
+  (`getAIProvider`, `providerStatus`, 5 presets). Keys via server env: `AI_ANTHROPIC_API_KEY`, `AI_OPENAI_API_KEY`,
+  `AI_DEEPSEEK_API_KEY`, `AI_GEMINI_API_KEY`, `AI_GLM_API_KEY` (+ optional `AI_<ID>_BASE_URL`).
+- **`src/modules/freight/ai/`** — `tiers.ts` (AITier cheap|standard|premium, AIMode off|suggest|auto, the AI task
+  catalogue, TIER_MODEL defaults); `0038 freight.ai_task_settings` (per-company per-task override of mode/tier/
+  provider/model, RLS gated `freight.ai.manage`); `config.ts` (resolver: DB override → code default; default mode
+  'off'); `runner.ts` (`runAiJob` generic — renders the active `freight.prompts` template, calls the provider,
+  records `freight.ai_jobs`; short-circuits to 'skipped' when off/no-key; `testProvider` for the settings check);
+  `approval.ts` (approve/reject ai_jobs — **executor seam documented, not wired**: when a task is enabled, map
+  stored `tool_calls[].name` → a freight action core fn); `queries.ts`; `settings-actions.ts`;
+  `prompts.defaults.ts`.
+- **UI**: `/freight/ai` (AI inbox: awaiting-approval + recent activity) and `/freight/settings/ai` (per-task model/
+  mode table, provider status, live connection test, editable prompts + install-defaults). Manifest nav: `ai` +
+  `ai_settings`. Permission `freight.ai.manage` already seeded.
+- **TO SWITCH ON (per task):** add a provider key to the server env (Vercel) → open `/freight/settings/ai`, set a
+  task to **Suggest** + pick provider/model (or leave tier default) → install/edit the prompt → run it; the AI
+  drafts, a human approves in `/freight/ai`. To make a task actually EXECUTE on approval, wire its executor in
+  `approval.ts` (extract a core fn from the matching action in `src/modules/freight/actions.ts` — see the Plan
+  agent's tool-surface table in chat). `auto` mode + real task wiring is the last step per task.
+- **Model guidance (provider-agnostic):** CHEAP tier (Haiku / GPT-mini-nano / Gemini Flash-Lite / Groq-or-local
+  Llama) for classify/extract/summarise/template-fill ≈ 80% of tasks; STANDARD (Sonnet / GPT-4.1-class /
+  Gemini Flash-Pro) for drafting/comparison; PREMIUM (Opus / GPT-5-o-class / Gemini Pro-high) ONLY for multi-step
+  agentic chains. Always use structured/JSON output so cheap models stay reliable. Defaults already encode this.
+
 ## 8. Next work (priority order)
-1. **Efficiency-audit cleanup — DONE** (see §7). **Customer portal — DONE & live** (see §7b).
+1. **Efficiency-audit cleanup — DONE** (see §7). **Customer portal — DONE & live** (see §7b). **AI infrastructure
+   — DONE & live, dormant** (see §7c).
 2. **Bring it up for real use / onboard a test teammate**: create a teammate, Request access, approve, verify they
    see only that module, run a shipment RFQ→release. (Owner wanted to actually use it before extra features.)
 3. **Customer portal** (workstream A) — when ready: client-scoped access (mirror `cargo.client_access` pattern),
