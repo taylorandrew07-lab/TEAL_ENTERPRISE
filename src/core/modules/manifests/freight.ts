@@ -24,7 +24,7 @@ export const freightManifest: ModuleManifest = {
     'AI and Microsoft 365 email can be switched on later without rework.',
   route: '/freight',
   schema: 'freight',
-  status: 'beta',
+  status: 'live',
   icon: 'truck',
   enabledByDefault: false,
   navigation: [

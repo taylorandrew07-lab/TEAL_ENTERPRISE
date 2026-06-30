@@ -23,6 +23,7 @@ export const viewport: Viewport = {
   themeColor: '#4f46e5',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover', // extend under notches; paired with safe-area insets in globals.css
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

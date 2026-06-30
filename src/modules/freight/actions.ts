@@ -10,7 +10,9 @@ import { computeFreeTime } from './freetime';
 import { getTrackingProvider } from './tracking';
 
 function back(path: string, error?: string): never {
-  redirect(error ? `${path}?error=${encodeURIComponent(error)}` : path);
+  // Only internal absolute paths — block external/protocol-relative open redirects.
+  const safe = path.startsWith('/') && !path.startsWith('//') ? path : '/freight';
+  redirect(error ? `${safe}?error=${encodeURIComponent(error)}` : safe);
 }
 
 // ----------------------------------------------------------------------------- contacts
@@ -162,7 +164,8 @@ export async function setTaskStatus(formData: FormData): Promise<void> {
   if (!companyId) back('/freight/tasks', 'No active company');
   const id = String(formData.get('id') ?? '');
   const status = String(formData.get('status') ?? '');
-  const dest = String(formData.get('return_to') ?? '/freight/tasks');
+  const rt = String(formData.get('return_to') ?? '/freight/tasks');
+  const dest = rt.startsWith('/freight/') ? rt : '/freight/tasks'; // whitelist internal freight paths only
   if (!id || !['open', 'doing', 'blocked', 'done', 'cancelled'].includes(status)) back(dest, 'Invalid request');
 
   const patch: Record<string, unknown> = { status };

@@ -348,6 +348,10 @@ a.card {
   gap: 14px;
   flex-wrap: wrap;
   padding: 8px 18px;
+  /* Respect notches / device safe areas when installed as a PWA (viewport-fit=cover). */
+  padding-top: max(8px, env(safe-area-inset-top));
+  padding-left: max(18px, env(safe-area-inset-left));
+  padding-right: max(18px, env(safe-area-inset-right));
   min-height: var(--header-h);
   background: var(--primary);
   border-bottom: 1px solid var(--primary-strong);
@@ -776,6 +780,7 @@ a.card {
   }
   .module-main {
     padding: 22px 18px;
+    padding-bottom: max(22px, env(safe-area-inset-bottom));
   }
 }
 

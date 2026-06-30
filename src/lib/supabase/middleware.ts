@@ -3,6 +3,7 @@
 // a no-op when Supabase env is absent (pre-configuration), so the app still serves.
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { AUTH_COOKIE_OPTIONS } from './cookie-options';
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -14,6 +15,9 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   if (!url || !key) return response;
 
   const supabase = createServerClient(url, key, {
+    // Persistent, hardened auth cookies — the session survives app/browser restarts
+    // (so mobile users log in once) and is secure + same-site. See cookie-options.ts.
+    cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return request.cookies.getAll();

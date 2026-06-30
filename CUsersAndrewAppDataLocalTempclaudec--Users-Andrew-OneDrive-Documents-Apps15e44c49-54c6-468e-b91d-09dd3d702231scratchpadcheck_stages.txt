@@ -1,0 +1,10 @@
+Enum stages:
+lead, rfq, supplier_quoting, customer_quote, customer_approval,
+booking_confirmed, cargo_ready, collection, export_clearance, loaded,
+departed, in_transit, arrival, import_clearance, delivery,
+proof_of_delivery, invoiced, completed, archived
+
+Automation case branches:
+rfq, customer_quote, booking_confirmed, cargo_ready, collection,
+export_clearance, loaded, departed, arrival, import_clearance,
+delivery, proof_of_delivery, invoiced, completed
