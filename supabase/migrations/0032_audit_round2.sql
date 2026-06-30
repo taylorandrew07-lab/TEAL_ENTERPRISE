@@ -46,7 +46,7 @@ create policy uma_del on core.user_module_access for delete
 -- -----------------------------------------------------------------------------
 delete from freight.charges c
 where c.quote_line_id is not null
-  and c.id <> (select min(c2.id) from freight.charges c2 where c2.quote_line_id = c.quote_line_id);
+  and c.id::text <> (select min(c2.id::text) from freight.charges c2 where c2.quote_line_id = c.quote_line_id);
 create unique index if not exists charges_quote_line_uniq
   on freight.charges (quote_line_id) where quote_line_id is not null;
 
