@@ -138,8 +138,11 @@ begin
 end;
 $$;
 
+-- Fires on insert and on any update that touches `stage` (the `of stage` clause).
+-- Re-entering the same stage is harmless: seed_task/seed_milestone are idempotent
+-- (on conflict do nothing). `tg_op` is NOT valid in a trigger WHEN clause — the
+-- guard belongs inside the function, and idempotency makes it unnecessary here.
 create trigger trg_shipment_stage_automation
   after insert or update of stage on freight.shipments
   for each row
-  when (tg_op = 'INSERT' or new.stage is distinct from old.stage)
   execute function freight.apply_stage_automation();
