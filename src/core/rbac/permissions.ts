@@ -54,6 +54,12 @@ export const SYSTEM_ROLE_KEYS = [
   'ca_reviewer',
   'ca_client_admin',
   'ca_client_viewer',
+  // Freight Forwarding (Jupiter Logistics) module roles.
+  'freight_admin',
+  'freight_ops',
+  'freight_sales',
+  'freight_accounts',
+  'freight_client_viewer',
 ] as const;
 
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];

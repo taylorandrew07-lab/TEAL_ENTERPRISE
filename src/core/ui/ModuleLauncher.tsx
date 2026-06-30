@@ -16,7 +16,6 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 export function ModuleLauncher({ ctx }: { ctx: PlatformContext }) {
   const modules = visibleModules(ctx.enabledModuleKeys, ctx.isSuperAdmin, can(ctx, 'platform.beta'));
-  const company = ctx.companies.find((c) => c.id === ctx.activeCompanyId);
 
   return (
     <main className="launcher">
@@ -24,7 +23,7 @@ export function ModuleLauncher({ ctx }: { ctx: PlatformContext }) {
         <div>
           <h1 style={{ fontSize: 'var(--text-2xl)' }}>Modules</h1>
           <p className="muted" style={{ margin: '4px 0 0' }}>
-            {company ? `${company.name} · ` : ''}Select a module to open. Availability follows your role.
+            TEAL Enterprise · Select a module to open. Availability follows your role.
           </p>
         </div>
       </div>

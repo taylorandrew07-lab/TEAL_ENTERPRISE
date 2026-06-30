@@ -113,6 +113,39 @@ export const SYSTEM_ROLES: SystemRoleDef[] = [
   },
   { key: 'ca_client_admin', name: 'Client Administrator', description: 'External: read-only + manage own client viewers', grants: ['cargo.client.view'] },
   { key: 'ca_client_viewer', name: 'Client Viewer', description: 'External: read-only published dashboards & reports', grants: ['cargo.client.view'] },
+  {
+    key: 'freight_admin',
+    name: 'Freight Administrator',
+    description: 'Full freight module control',
+    grants: [
+      'freight.shipments.manage', 'freight.quotes.manage', 'freight.contacts.manage', 'freight.containers.manage',
+      'freight.documents.manage', 'freight.comms.manage', 'freight.finance.manage', 'freight.reports.view',
+      'freight.reports.export', 'freight.ai.manage', 'documents.manage', 'clients.manage', 'audit.view',
+    ],
+  },
+  {
+    key: 'freight_ops',
+    name: 'Freight Operator',
+    description: 'Day-to-day shipment operations',
+    grants: [
+      'freight.shipments.manage', 'freight.quotes.manage', 'freight.contacts.manage', 'freight.containers.manage',
+      'freight.documents.manage', 'freight.comms.manage', 'freight.finance.manage', 'freight.reports.view',
+      'freight.reports.export', 'documents.manage',
+    ],
+  },
+  {
+    key: 'freight_sales',
+    name: 'Freight Sales',
+    description: 'Quotations and contacts',
+    grants: ['freight.quotes.manage', 'freight.contacts.manage', 'freight.reports.view'],
+  },
+  {
+    key: 'freight_accounts',
+    name: 'Freight Accounts',
+    description: 'Operational freight finance and reporting',
+    grants: ['freight.finance.manage', 'freight.reports.view', 'freight.reports.export'],
+  },
+  { key: 'freight_client_viewer', name: 'Freight Customer', description: 'External: read-only access to own shipments', grants: ['freight.client.view'] },
 ];
 
 export const SYSTEM_ROLE_KEYS = SYSTEM_ROLES.map((r) => r.key);

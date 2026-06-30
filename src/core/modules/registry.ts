@@ -10,9 +10,10 @@
 import type { ModuleManifest, ModulePermission, NavItem } from './types';
 import { accountingManifest } from './manifests/accounting';
 import { cargoAssuranceManifest } from './manifests/cargo-assurance';
+import { freightManifest } from './manifests/freight';
 
 /** All modules known to the platform, in launcher order. */
-export const MODULES: ModuleManifest[] = [accountingManifest, cargoAssuranceManifest];
+export const MODULES: ModuleManifest[] = [accountingManifest, cargoAssuranceManifest, freightManifest];
 
 const BY_KEY = new Map(MODULES.map((m) => [m.key, m]));
 

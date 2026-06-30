@@ -1,28 +1,28 @@
 /* =============================================================================
    TEAL Enterprise — design system tokens + base + utilities.
-   Light, restrained, data-dense enterprise UI. Brand teal preserved. See docs/DESIGN.md.
+   Light, restrained, data-dense enterprise UI. Brand: indigo. See docs/DESIGN.md.
    ============================================================================= */
 
 :root {
-  /* Neutrals — tinted a hair toward the brand hue (cool ~215), NOT warm cream. */
-  --bg: oklch(0.985 0.004 215);
+  /* Neutrals — tinted a hair toward the brand hue (cool indigo ~277), NOT warm cream. */
+  --bg: oklch(0.985 0.004 277);
   --surface: oklch(1 0 0);
-  --surface-2: oklch(0.967 0.005 215);
-  --surface-3: oklch(0.945 0.006 215);
-  --border: oklch(0.912 0.006 220);
-  --border-strong: oklch(0.84 0.01 220);
+  --surface-2: oklch(0.967 0.005 277);
+  --surface-3: oklch(0.945 0.006 277);
+  --border: oklch(0.912 0.006 280);
+  --border-strong: oklch(0.84 0.01 280);
 
-  /* Ink ramp — body text is dark (>=4.5:1); muted is for de-emphasis only. */
-  --ink: oklch(0.25 0.02 245);
-  --ink-2: oklch(0.42 0.018 245);
-  --muted: oklch(0.52 0.014 245);
+  /* Ink ramp — body text is dark (>=4.5:1); muted is for de-emphasis only. Cool slate. */
+  --ink: oklch(0.25 0.02 270);
+  --ink-2: oklch(0.42 0.018 270);
+  --muted: oklch(0.52 0.014 270);
 
-  /* Brand teal (#0f766e) + states. */
-  --primary: oklch(0.52 0.09 182);
-  --primary-strong: oklch(0.45 0.092 182);
-  --primary-weak: oklch(0.955 0.028 182);
-  --primary-ink: oklch(0.99 0.012 182);
-  --primary-border: oklch(0.86 0.05 182);
+  /* Brand indigo (#4f46e5) + states. */
+  --primary: oklch(0.51 0.2 277);
+  --primary-strong: oklch(0.45 0.19 277);
+  --primary-weak: oklch(0.96 0.028 277);
+  --primary-ink: oklch(0.99 0.01 277);
+  --primary-border: oklch(0.86 0.06 277);
 
   /* Semantic (finance: posted / draft / void · positive / negative). */
   --success: oklch(0.52 0.11 152);
@@ -40,9 +40,9 @@
   --r-full: 999px;
 
   /* Subtle layered shadows (no heavy drop shadows). */
-  --shadow-sm: 0 1px 2px oklch(0.25 0.02 245 / 0.06);
-  --shadow: 0 1px 2px oklch(0.25 0.02 245 / 0.05), 0 4px 12px oklch(0.25 0.02 245 / 0.05);
-  --shadow-md: 0 8px 28px oklch(0.25 0.02 245 / 0.10);
+  --shadow-sm: 0 1px 2px oklch(0.25 0.02 270 / 0.06);
+  --shadow: 0 1px 2px oklch(0.25 0.02 270 / 0.05), 0 4px 12px oklch(0.25 0.02 270 / 0.05);
+  --shadow-md: 0 8px 28px oklch(0.25 0.02 270 / 0.10);
 
   /* Semantic z-index scale. */
   --z-dropdown: 100;

@@ -16,7 +16,7 @@
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff",
     "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --local --schema core,accounting,cargo > src/lib/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema core,accounting,cargo,freight > src/lib/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

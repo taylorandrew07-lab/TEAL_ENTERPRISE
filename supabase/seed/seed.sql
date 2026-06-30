@@ -238,3 +238,93 @@ insert into cargo.cargo_types (key, name, category, default_density_kg_m3) value
   ('caustic_soda',      'Caustic Soda Solution',      'chemical',     1525.0),
   ('other_liquid',      'Other Liquid Cargo',         'other',         null)
 on conflict (key) do nothing;
+
+-- =============================================================================
+-- Freight Forwarding module (Jupiter Logistics) — reference seed
+-- Mirrors src/core/modules/manifests/freight.ts. See docs/freight/_FREIGHT-SPEC.md.
+-- =============================================================================
+
+-- Permission catalogue (category 'freight'). External portal permission flagged in description.
+insert into core.permissions (key, name, description, category) values
+  ('freight.shipments.manage',  'Manage shipments',         'Create and edit shipments, advance lifecycle stage, manage tasks & milestones',  'freight'),
+  ('freight.quotes.manage',     'Manage quotes',            'Create RFQs, record supplier quotes, prepare customer quotations',         'freight'),
+  ('freight.contacts.manage',   'Manage contacts',          'Maintain the freight CRM (clients, carriers, agents, brokers, truckers)',   'freight'),
+  ('freight.containers.manage', 'Manage containers',        'Track containers, free time, demurrage and detention',                     'freight'),
+  ('freight.documents.manage',  'Manage freight documents', 'Upload, generate and link shipment documents',                            'freight'),
+  ('freight.comms.manage',      'Manage communications',    'Log/send communications and manage connected mailboxes',                   'freight'),
+  ('freight.finance.manage',    'Manage freight finance',   'Record supplier costs and customer charges; view profitability',           'freight'),
+  ('freight.reports.view',      'View freight dashboards',  'View the operational dashboard, analysis and reports',                     'freight'),
+  ('freight.reports.export',    'Export freight reports',   'Generate freight report exports',                                          'freight'),
+  ('freight.ai.manage',         'Manage AI automation',     'Configure prompts and enable AI-performed steps (dormant until switched on)','freight'),
+  ('freight.client.view',       'Customer portal view',     'External read-only access for customers to their own shipments',            'freight')
+on conflict (key) do nothing;
+
+-- Module system roles (company_id null, is_system true). Internal ops roles + external customer role.
+insert into core.roles (company_id, key, name, description, is_system) values
+  (null, 'freight_admin',         'Freight Administrator', 'Full freight module control',                       true),
+  (null, 'freight_ops',           'Freight Operator',      'Day-to-day shipment operations',                    true),
+  (null, 'freight_sales',         'Freight Sales',         'Quotations and contacts',                           true),
+  (null, 'freight_accounts',      'Freight Accounts',      'Operational freight finance and reporting',         true),
+  (null, 'freight_client_viewer', 'Freight Customer',      'External: read-only access to own shipments',        true)
+on conflict (key) where company_id is null do nothing;
+
+-- Super Admin & Company Admin get every permission via the cross join; re-run to
+-- include the newly-added freight permissions.
+insert into core.role_permissions (role_id, permission_id)
+select r.id, p.id
+from core.roles r
+cross join core.permissions p
+where r.is_system and r.key in ('super_admin', 'company_admin')
+on conflict do nothing;
+
+-- freight_admin: every freight permission + shared document/client/audit access.
+insert into core.role_permissions (role_id, permission_id)
+select r.id, p.id
+from core.roles r
+join core.permissions p on p.key in (
+  'freight.shipments.manage','freight.quotes.manage','freight.contacts.manage','freight.containers.manage',
+  'freight.documents.manage','freight.comms.manage','freight.finance.manage','freight.reports.view',
+  'freight.reports.export','freight.ai.manage','documents.manage','clients.manage','audit.view'
+)
+where r.is_system and r.key = 'freight_admin'
+on conflict do nothing;
+
+-- freight_ops: full operational control, no AI config.
+insert into core.role_permissions (role_id, permission_id)
+select r.id, p.id
+from core.roles r
+join core.permissions p on p.key in (
+  'freight.shipments.manage','freight.quotes.manage','freight.contacts.manage','freight.containers.manage',
+  'freight.documents.manage','freight.comms.manage','freight.finance.manage','freight.reports.view','freight.reports.export',
+  'documents.manage'  -- core perm required by Storage RLS to upload files
+)
+where r.is_system and r.key = 'freight_ops'
+on conflict do nothing;
+
+-- freight_sales: quotes + contacts + read.
+insert into core.role_permissions (role_id, permission_id)
+select r.id, p.id
+from core.roles r
+join core.permissions p on p.key in (
+  'freight.quotes.manage','freight.contacts.manage','freight.reports.view'
+)
+where r.is_system and r.key = 'freight_sales'
+on conflict do nothing;
+
+-- freight_accounts: finance + reporting.
+insert into core.role_permissions (role_id, permission_id)
+select r.id, p.id
+from core.roles r
+join core.permissions p on p.key in (
+  'freight.finance.manage','freight.reports.view','freight.reports.export'
+)
+where r.is_system and r.key = 'freight_accounts'
+on conflict do nothing;
+
+-- freight_client_viewer: external read-only portal access only.
+insert into core.role_permissions (role_id, permission_id)
+select r.id, p.id
+from core.roles r
+join core.permissions p on p.key = 'freight.client.view'
+where r.is_system and r.key = 'freight_client_viewer'
+on conflict do nothing;
