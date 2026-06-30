@@ -238,6 +238,22 @@ task is switched on. Pattern mirrors the email NoopSender.
   Gemini Flash-Pro) for drafting/comparison; PREMIUM (Opus / GPT-5-o-class / Gemini Pro-high) ONLY for multi-step
   agentic chains. Always use structured/JSON output so cheap models stay reliable. Defaults already encode this.
 
+## 7d. MULTI-AGENT CODE REVIEW (2026-06-30) — done, fixes applied
+Ran a 5-dimension adversarial review (interconnection, security/RLS, AI correctness, portal correctness, quality)
+over the portal + AI infra. **12 findings, all confirmed, 0 P0 — no security exposure, no data leak, no broken
+interconnection.** Confidentiality + AI dormancy held. FIXED & shipped: P1 email dedup (0039 — queued email was
+not deduped per day like the in-app path; would duplicate once M365 sends); mark-read now wired on notification
+click + bell revalidates layout; savePrompt deactivates prior versions (was duplicating editors); AI config reads
+now `company_id`-scoped (multi-company admin breakage); prefs read user-scoped; runner surfaces ai_jobs write
+errors (no phantom 'done'); OpenAI o-series/gpt-5 param shape; email-attachment check scoped to the email's
+shipment; PromptRow.updated_at selected; portal header shows all linked customers.
+**DEFERRED (need activation work, documented):** (a) `freight.ai_jobs` INSERT policy is gated on
+`freight.ai.manage`, so a non-admin triggering an AI task would be RLS-rejected — fix before AI is switched on for
+ops users (write ai_jobs via service role/SECURITY DEFINER, or add a member-insert policy for performed_by='ai').
+(b) Free-time/demurrage notifications only fire on container-column edits, NOT on calendar countdown — needs a
+daily pg_cron sweep calling enqueue_notification (refactor the threshold math into a shared fn). (c) Full
+multi-customer portal switcher (today: all names shown, shipments span all, but prefs only for customers[0]).
+
 ## 8. Next work (priority order)
 1. **Efficiency-audit cleanup — DONE** (see §7). **Customer portal — DONE & live** (see §7b). **AI infrastructure
    — DONE & live, dormant** (see §7c).

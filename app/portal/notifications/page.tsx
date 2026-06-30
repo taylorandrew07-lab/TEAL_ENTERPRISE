@@ -1,7 +1,5 @@
-import Link from 'next/link';
-import type { Route } from 'next';
 import { requirePortal } from '@/core/session/portal-guard';
-import { getPortalNotifications, markAllNotificationsRead } from '@/modules/freight/portal/notifications';
+import { getPortalNotifications, markAllNotificationsRead, openNotification } from '@/modules/freight/portal/notifications';
 import { formatDate } from '@/lib/format';
 
 export const metadata = { title: 'Notifications — Jupiter Logistics' };
@@ -33,22 +31,23 @@ export default async function PortalNotifications() {
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 8 }}>
-          {items.map((n) => {
-            const inner = (
-              <div className="card" style={{ padding: 14, borderLeft: n.read_at ? '3px solid transparent' : '3px solid var(--primary)' }}>
-                <div className="row" style={{ justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
-                  <strong style={{ color: 'var(--ink)' }}>{n.subject ?? pretty(n.kind)}</strong>
-                  <span className="muted num" style={{ fontSize: 'var(--text-sm)' }}>{formatDate(n.created_at)}</span>
+          {items.map((n) => (
+            // Submitting marks the notification read (clearing the bell badge) then
+            // navigates to its shipment — see openNotification.
+            <form key={n.id} action={openNotification}>
+              <input type="hidden" name="id" value={n.id} />
+              <input type="hidden" name="shipment_id" value={n.shipment_id ?? ''} />
+              <button type="submit" style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%' }}>
+                <div className="card" style={{ padding: 14, borderLeft: n.read_at ? '3px solid transparent' : '3px solid var(--primary)' }}>
+                  <div className="row" style={{ justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+                    <strong style={{ color: 'var(--ink)' }}>{n.subject ?? pretty(n.kind)}</strong>
+                    <span className="muted num" style={{ fontSize: 'var(--text-sm)' }}>{formatDate(n.created_at)}</span>
+                  </div>
+                  {n.body ? <p className="muted" style={{ margin: '4px 0 0', fontSize: 'var(--text-sm)' }}>{n.body}</p> : null}
                 </div>
-                {n.body ? <p className="muted" style={{ margin: '4px 0 0', fontSize: 'var(--text-sm)' }}>{n.body}</p> : null}
-              </div>
-            );
-            return n.shipment_id ? (
-              <Link key={n.id} href={`/portal/shipments/${n.shipment_id}` as Route} style={{ display: 'block' }}>{inner}</Link>
-            ) : (
-              <div key={n.id}>{inner}</div>
-            );
-          })}
+              </button>
+            </form>
+          ))}
         </div>
       )}
     </div>

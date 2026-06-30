@@ -8,7 +8,7 @@ import { getUnreadCount } from './notifications';
 import type { PortalContext } from '@/core/session/portal-context';
 
 export async function PortalShell({ ctx, children }: { ctx: PortalContext; children: React.ReactNode }) {
-  const customerName = ctx.customers[0]?.contactName ?? '';
+  const customerName = ctx.customers.map((c) => c.contactName).join(', ');
   const unread = await getUnreadCount();
   return (
     <div>

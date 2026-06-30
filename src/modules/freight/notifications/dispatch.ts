@@ -26,7 +26,7 @@ export async function dispatchOutboundEmails(): Promise<{ ok: boolean; processed
     .eq('company_id', ctx.activeCompanyId)
     .eq('status', 'queued')
     .limit(50);
-  const rows = (queued as (OutboundEmail & { attachment_document_ids: string[] })[] | null) ?? [];
+  const rows = (queued as (OutboundEmail & { shipment_id: string | null; attachment_document_ids: string[] })[] | null) ?? [];
 
   let sent = 0;
   for (const row of rows) {
@@ -36,6 +36,7 @@ export async function dispatchOutboundEmails(): Promise<{ ok: boolean; processed
       const { data: docs } = await freight
         .from('shipment_documents')
         .select('document_id')
+        .eq('shipment_id', row.shipment_id)
         .in('document_id', row.attachment_document_ids)
         .eq('visibility', 'client_visible');
       safeAttachments = ((docs as { document_id: string }[] | null) ?? []).map((d) => d.document_id);

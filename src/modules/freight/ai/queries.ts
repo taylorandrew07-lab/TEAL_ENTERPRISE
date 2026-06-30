@@ -30,6 +30,6 @@ export interface PromptRow { id: string; key: string; name: string; template: st
 export async function listPrompts(): Promise<PromptRow[]> {
   const { freight, companyId } = await freightDb();
   if (!companyId) return [];
-  const { data } = await freight.from('prompts').select('id, key, name, template, version, is_active').eq('is_active', true).order('key');
+  const { data } = await freight.from('prompts').select('id, key, name, template, version, is_active, updated_at').eq('is_active', true).order('key');
   return (data as PromptRow[] | null) ?? [];
 }

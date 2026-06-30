@@ -34,22 +34,22 @@ export async function runAiJob(jobType: string, input: Record<string, unknown>, 
   const userId = ctx.user?.id ?? null;
 
   const writeJob = async (fields: Record<string, unknown>) => {
-    const { data } = await freight.from('ai_jobs').insert({
+    const { data, error } = await freight.from('ai_jobs').insert({
       company_id: companyId, shipment_id: opts.shipmentId ?? null, job_type: jobType,
       performed_by: 'ai', prompt_key: jobType, model: cfg.model, created_by: userId, ...fields,
     }).select('id').single();
-    return (data as { id: string } | null)?.id ?? null;
+    return { id: (data as { id: string } | null)?.id ?? null, error: error?.message ?? null };
   };
 
-  // Dormant paths — no model is called.
+  // Dormant paths — no model is called. The audit-row write is best-effort here.
   if (cfg.mode === 'off') {
-    const jobId = await writeJob({ status: 'skipped', input, error: 'AI is off for this task.' });
-    return { jobId, status: 'skipped', error: 'AI is off for this task.' };
+    const { id } = await writeJob({ status: 'skipped', input, error: 'AI is off for this task.' });
+    return { jobId: id, status: 'skipped', error: 'AI is off for this task.' };
   }
   const provider = getAIProvider(cfg.provider);
   if (!provider.configured) {
-    const jobId = await writeJob({ status: 'skipped', input, error: `No API key configured for provider "${cfg.provider}".` });
-    return { jobId, status: 'skipped', error: `No API key configured for provider "${cfg.provider}".` };
+    const { id } = await writeJob({ status: 'skipped', input, error: `No API key configured for provider "${cfg.provider}".` });
+    return { jobId: id, status: 'skipped', error: `No API key configured for provider "${cfg.provider}".` };
   }
 
   // Resolve the active prompt (DB override → code default).
@@ -70,15 +70,18 @@ export async function runAiJob(jobType: string, input: Record<string, unknown>, 
     });
     const readOnly = JOB_TYPE_BY_KEY.get(jobType)?.readOnly ?? result.toolCalls.length === 0;
     const status = readOnly || result.toolCalls.length === 0 ? 'done' : 'awaiting_approval';
-    const jobId = await writeJob({
+    const { id, error } = await writeJob({
       status, input, output: { text: result.text }, tool_calls: result.toolCalls.length ? result.toolCalls : null,
       completed_at: status === 'done' ? new Date().toISOString() : null,
     });
-    return { jobId, status, text: result.text };
+    // The model already ran; if the audit row couldn't be written, report failure
+    // rather than a phantom success the approval queue can never act on.
+    if (error) return { jobId: null, status: 'failed', error: `AI ran but the job could not be recorded: ${error}` };
+    return { jobId: id, status, text: result.text };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'AI call failed.';
-    const jobId = await writeJob({ status: 'failed', input, error: msg });
-    return { jobId, status: 'failed', error: msg };
+    const { id } = await writeJob({ status: 'failed', input, error: msg });
+    return { jobId: id, status: 'failed', error: msg };
   }
 }
 

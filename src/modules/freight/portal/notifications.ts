@@ -4,6 +4,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getPortalContext } from '@/core/session/portal-context';
 
@@ -34,24 +35,40 @@ export async function getUnreadCount(): Promise<number> {
 export async function markNotificationRead(id: string): Promise<void> {
   const freight = await freightClient();
   await freight.rpc('portal_mark_notification_read', { p_id: id });
-  revalidatePath('/portal/notifications');
+  // revalidate the layout too, so the bell unread badge (rendered in PortalShell) updates.
+  revalidatePath('/portal', 'layout');
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
   const freight = await freightClient();
   await freight.rpc('portal_mark_all_notifications_read');
-  revalidatePath('/portal/notifications');
+  revalidatePath('/portal', 'layout');
+}
+
+/** Open a notification: mark it read, then navigate to its shipment (or back to the
+ *  list). Wired into each notification row so clicking through clears the unread badge. */
+export async function openNotification(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  const shipmentId = String(formData.get('shipment_id') ?? '');
+  if (id) {
+    const freight = await freightClient();
+    await freight.rpc('portal_mark_notification_read', { p_id: id });
+    revalidatePath('/portal', 'layout');
+  }
+  redirect(shipmentId ? `/portal/shipments/${shipmentId}` : '/portal/notifications');
 }
 
 export interface NotificationPrefs { in_app: boolean; email: boolean }
 
 export async function getNotificationPreferences(): Promise<NotificationPrefs> {
   const ctx = await getPortalContext();
-  if (ctx.status !== 'ready' || !ctx.activeCustomerId) return { in_app: true, email: false };
+  if (ctx.status !== 'ready' || !ctx.activeCustomerId || !ctx.user) return { in_app: true, email: false };
   const freight = await freightClient();
+  // Scope to the signed-in user (matches the update path) so a staff-visibility RLS
+  // policy can never surface another user's row here.
   const { data } = await freight
     .from('notification_preferences').select('in_app, email')
-    .eq('customer_contact_id', ctx.activeCustomerId).maybeSingle();
+    .eq('customer_contact_id', ctx.activeCustomerId).eq('user_id', ctx.user.id).maybeSingle();
   const row = data as NotificationPrefs | null;
   return row ?? { in_app: true, email: false };
 }

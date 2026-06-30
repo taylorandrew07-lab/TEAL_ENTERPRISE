@@ -28,7 +28,7 @@ export async function upsertTaskSetting(formData: FormData): Promise<Result> {
     const model = (String(formData.get('model') ?? '').trim() || null) as string | null;
     if (!job_type) return { ok: false, error: 'Missing task.' };
 
-    const { data: existing } = await freight.from('ai_task_settings').select('id').eq('job_type', job_type).maybeSingle();
+    const { data: existing } = await freight.from('ai_task_settings').select('id').eq('company_id', companyId).eq('job_type', job_type).maybeSingle();
     const row = { company_id: companyId, job_type, mode, tier, provider, model };
     const { error } = existing
       ? await freight.from('ai_task_settings').update(row).eq('id', (existing as { id: string }).id)
@@ -43,7 +43,7 @@ export async function installDefaultPrompts(): Promise<Result> {
   try {
     const { freight, companyId } = await requireAiAdmin();
     for (const [key, p] of Object.entries(DEFAULT_PROMPTS)) {
-      const { data: existing } = await freight.from('prompts').select('id').eq('key', key).limit(1).maybeSingle();
+      const { data: existing } = await freight.from('prompts').select('id').eq('company_id', companyId).eq('key', key).limit(1).maybeSingle();
       if (existing) continue; // don't clobber edited prompts
       const { error } = await freight.from('prompts').insert({
         company_id: companyId, key, name: p.name, template: p.template, variables: p.variables, version: 1, is_active: true,
@@ -62,9 +62,11 @@ export async function savePrompt(formData: FormData): Promise<Result> {
     const name = String(formData.get('name') ?? '').trim();
     const template = String(formData.get('template') ?? '');
     if (!key || !template) return { ok: false, error: 'Key and template are required.' };
-    // New version; keep history. The runner reads the highest active version.
-    const { data: latest } = await freight.from('prompts').select('version').eq('key', key).order('version', { ascending: false }).limit(1).maybeSingle();
+    // New version; keep history. Deactivate prior versions first so only the latest is
+    // active (otherwise the settings list shows a duplicate editor per old version).
+    const { data: latest } = await freight.from('prompts').select('version').eq('company_id', companyId).eq('key', key).order('version', { ascending: false }).limit(1).maybeSingle();
     const version = ((latest as { version: number } | null)?.version ?? 0) + 1;
+    await freight.from('prompts').update({ is_active: false }).eq('company_id', companyId).eq('key', key).eq('is_active', true);
     const { error } = await freight.from('prompts').insert({ company_id: companyId, key, name: name || key, template, variables: [], version, is_active: true });
     if (error) return { ok: false, error: error.message };
     revalidatePath('/freight/settings/ai');

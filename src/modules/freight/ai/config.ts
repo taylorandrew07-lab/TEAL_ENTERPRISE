@@ -31,7 +31,8 @@ function resolve(jobType: string, row: SettingRow | undefined): EffectiveTaskCon
 export async function getTaskConfig(jobType: string): Promise<EffectiveTaskConfig> {
   const { freight, companyId } = await freightDb();
   if (!companyId) return resolve(jobType, undefined);
-  const { data } = await freight.from('ai_task_settings').select('job_type, mode, tier, provider, model').eq('job_type', jobType).maybeSingle();
+  const { data } = await freight.from('ai_task_settings').select('job_type, mode, tier, provider, model')
+    .eq('company_id', companyId).eq('job_type', jobType).maybeSingle();
   return resolve(jobType, (data as SettingRow | null) ?? undefined);
 }
 
@@ -39,7 +40,7 @@ export async function getTaskConfig(jobType: string): Promise<EffectiveTaskConfi
 export async function listTaskConfigs(): Promise<EffectiveTaskConfig[]> {
   const { freight, companyId } = await freightDb();
   const rows = companyId
-    ? (((await freight.from('ai_task_settings').select('job_type, mode, tier, provider, model')).data) as SettingRow[] | null) ?? []
+    ? (((await freight.from('ai_task_settings').select('job_type, mode, tier, provider, model').eq('company_id', companyId)).data) as SettingRow[] | null) ?? []
     : [];
   const byType = new Map(rows.map((r) => [r.job_type, r]));
   return AI_JOB_TYPES.map((t) => resolve(t.key, byType.get(t.key)));

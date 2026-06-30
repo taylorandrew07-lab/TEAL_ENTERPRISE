@@ -24,12 +24,16 @@ export class OpenAICompatibleProvider implements AIProvider {
     if (req.system) messages.push({ role: 'system', content: req.system });
     for (const m of req.messages) messages.push({ role: m.role === 'tool' ? 'user' : m.role, content: m.content });
 
-    const body: Record<string, unknown> = {
-      model: req.model,
-      messages,
-      max_tokens: req.maxTokens ?? 1024,
-      temperature: req.temperature ?? 0.2,
-    };
+    // OpenAI reasoning models (o-series / gpt-5) reject `max_tokens` (require
+    // `max_completion_tokens`) and only allow temperature=1 — branch for them.
+    const reasoning = this.id === 'openai' && /^(o\d|gpt-5)/i.test(req.model);
+    const body: Record<string, unknown> = { model: req.model, messages };
+    if (reasoning) {
+      body.max_completion_tokens = req.maxTokens ?? 1024;
+    } else {
+      body.max_tokens = req.maxTokens ?? 1024;
+      body.temperature = req.temperature ?? 0.2;
+    }
     if (req.tools?.length) {
       body.tools = req.tools.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.parameters } }));
       if (req.toolChoice === 'auto' || req.toolChoice === 'none' || req.toolChoice === 'required') body.tool_choice = req.toolChoice;
