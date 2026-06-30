@@ -350,6 +350,8 @@ a.card {
   min-height: var(--header-h);
   background: oklch(1 0 0 / 0.85);
   backdrop-filter: saturate(180%) blur(8px);
+  /* Indigo brand accent bar across the very top. */
+  border-top: 3px solid var(--primary);
   border-bottom: 1px solid var(--border);
 }
 .brand {

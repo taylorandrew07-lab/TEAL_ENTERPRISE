@@ -1,4 +1,4 @@
-// Generates the PWA / favicon icons (a teal "T" mark, matching the header brand
+// Generates the PWA / favicon icons (an indigo "T" mark, matching the header brand
 // mark) from inline SVG via sharp. Run: node scripts/gen-icons.mjs
 import sharp from 'sharp';
 import { mkdirSync } from 'node:fs';
@@ -6,13 +6,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const TEAL = '#0f766e';
+const BRAND = '#4f46e5'; // indigo — matches --primary in app/globals.css
 
 // t: 'normal' (centered, fills more) | 'safe' (smaller, inside maskable safe zone)
 function svg({ rounded, t }) {
   const bg = rounded
-    ? `<rect width="512" height="512" rx="112" fill="${TEAL}"/>`
-    : `<rect width="512" height="512" fill="${TEAL}"/>`;
+    ? `<rect width="512" height="512" rx="112" fill="${BRAND}"/>`
+    : `<rect width="512" height="512" fill="${BRAND}"/>`;
   const T =
     t === 'safe'
       ? `<rect x="164" y="168" width="184" height="48" rx="8" fill="#fff"/><rect x="232" y="168" width="48" height="176" rx="8" fill="#fff"/>`

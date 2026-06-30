@@ -458,6 +458,81 @@ export async function getShipmentQuotes(shipmentId: string): Promise<{ rfqs: Rfq
   return { rfqs: (rfqs as RfqRow[] | null) ?? [], customerQuotes: (cqs as CustomerQuoteRow[] | null) ?? [] };
 }
 
+// ----------------------------------------------------------------------------- global search
+export interface SearchResults {
+  term: string;
+  shipments: { id: string; reference: string | null; stage: string; commodity: string | null; lane: string; customerName: string | null }[];
+  contacts: { id: string; name: string; roles: string[] | null }[];
+  containers: { id: string; container_no: string | null; shipment_id: string | null; status: string; shipmentRef: string | null }[];
+  customerQuotes: { id: string; reference: string | null; shipment_id: string; status: string }[];
+  rfqs: { id: string; reference: string | null; shipment_id: string | null; status: string }[];
+  total: number;
+}
+
+// One box → shipments, contacts, containers, quotations and RFQs. RLS scopes every
+// query to the active company; results are read-only (any company member may read).
+export async function globalSearch(rawTerm: string): Promise<SearchResults> {
+  const term = (rawTerm ?? '').replace(/[%,()*]/g, ' ').trim();
+  const empty: SearchResults = { term, shipments: [], contacts: [], containers: [], customerQuotes: [], rfqs: [], total: 0 };
+  const { freight, companyId } = await freightDb();
+  if (!companyId || term.length < 2) return empty;
+  const like = `%${term}%`;
+
+  const [shipRes, contactRes, ctrRes, cqRes, rfqRes] = await Promise.all([
+    freight.from('shipments')
+      .select('id, reference, stage, commodity, origin_name, destination_name, customer_contact_id')
+      .eq('company_id', companyId)
+      .or(`reference.ilike.${like},commodity.ilike.${like},origin_name.ilike.${like},destination_name.ilike.${like},vessel.ilike.${like},voyage.ilike.${like},booking_ref.ilike.${like},bl_number.ilike.${like}`)
+      .limit(12),
+    freight.from('contacts')
+      .select('id, name, roles')
+      .eq('company_id', companyId)
+      .or(`name.ilike.${like},tax_id.ilike.${like},country_code.ilike.${like}`)
+      .limit(12),
+    freight.from('containers')
+      .select('id, container_no, shipment_id, status')
+      .eq('company_id', companyId)
+      .or(`container_no.ilike.${like},seal_no.ilike.${like},current_location.ilike.${like}`)
+      .limit(12),
+    freight.from('customer_quotes')
+      .select('id, reference, shipment_id, status')
+      .eq('company_id', companyId)
+      .ilike('reference', like)
+      .limit(12),
+    freight.from('quote_requests')
+      .select('id, reference, shipment_id, status')
+      .eq('company_id', companyId)
+      .ilike('reference', like)
+      .limit(12),
+  ]);
+
+  const shipRows = (shipRes.data as any[] | null) ?? [];
+  const names = await contactNameMap(shipRows.map((r) => r.customer_contact_id));
+  const shipments = shipRows.map((r) => ({
+    id: r.id, reference: r.reference, stage: r.stage, commodity: r.commodity,
+    lane: [r.origin_name, r.destination_name].filter(Boolean).join(' → '),
+    customerName: names.get(r.customer_contact_id) ?? null,
+  }));
+
+  const ctrRows = (ctrRes.data as any[] | null) ?? [];
+  const ctrShipIds = [...new Set(ctrRows.map((c) => c.shipment_id).filter(Boolean) as string[])];
+  const ctrRefs = new Map<string, string | null>();
+  if (ctrShipIds.length) {
+    const { data } = await freight.from('shipments').select('id, reference').in('id', ctrShipIds);
+    (data ?? []).forEach((s: { id: string; reference: string | null }) => ctrRefs.set(s.id, s.reference));
+  }
+  const containers = ctrRows.map((c) => ({
+    id: c.id, container_no: c.container_no, shipment_id: c.shipment_id, status: c.status,
+    shipmentRef: c.shipment_id ? ctrRefs.get(c.shipment_id) ?? null : null,
+  }));
+
+  const contacts = (contactRes.data as any[] | null) ?? [];
+  const customerQuotes = (cqRes.data as any[] | null) ?? [];
+  const rfqs = (rfqRes.data as any[] | null) ?? [];
+  const total = shipments.length + contacts.length + containers.length + customerQuotes.length + rfqs.length;
+  return { term, shipments, contacts, containers, customerQuotes, rfqs, total };
+}
+
 // ----------------------------------------------------------------------------- documents
 export interface ShipmentDocumentRow {
   id: string; document_id: string; doc_type: string; visibility: string;

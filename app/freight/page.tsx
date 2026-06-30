@@ -38,6 +38,10 @@ export default async function FreightDashboard() {
         <Link href="/freight/shipments/new" className="btn btn-primary">New shipment</Link>
       </div>
 
+      <form action="/freight/search" method="get" style={{ maxWidth: 560, marginBottom: 24 }}>
+        <input name="q" className="input" placeholder="Search shipments, contacts, containers, B/L, booking, container no.…" aria-label="Search" />
+      </form>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
         <Stat label="Active shipments" value={stats.activeShipments} href="/freight/shipments" />
         <Stat label="In transit" value={stats.inTransit} />

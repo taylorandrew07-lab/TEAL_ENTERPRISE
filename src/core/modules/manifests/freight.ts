@@ -29,6 +29,7 @@ export const freightManifest: ModuleManifest = {
   enabledByDefault: false,
   navigation: [
     { key: 'dashboard', label: 'Dashboard', path: '', icon: 'gauge', requires: 'freight.reports.view' },
+    { key: 'search', label: 'Search', path: 'search', icon: 'search' },
     { key: 'shipments', label: 'Shipments', path: 'shipments', icon: 'package', requires: 'freight.shipments.manage' },
     { key: 'quotes', label: 'Quotes', path: 'quotes', icon: 'file-text', requires: 'freight.quotes.manage' },
     { key: 'tasks', label: 'Tasks', path: 'tasks', icon: 'clipboard-check', requires: 'freight.shipments.manage' },
