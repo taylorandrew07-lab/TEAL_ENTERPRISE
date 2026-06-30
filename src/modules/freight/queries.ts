@@ -74,7 +74,16 @@ export interface CommunicationRow {
 }
 export interface ChargeRow {
   id: string; kind: 'cost' | 'charge'; description: string; charge_code: string | null;
-  amount: number; currency_code: string | null; contact_id: string | null; invoiced: boolean;
+  amount: number; currency_code: string | null; fx_rate: number | null; base_amount: number;
+  contact_id: string | null; invoiced: boolean;
+}
+
+/** The company's base/reporting currency — what the financial rollups are expressed in. */
+export async function getCompanyBaseCurrency(): Promise<string> {
+  const { core, companyId } = await freightDb();
+  if (!companyId) return 'USD';
+  const { data } = await core.from('companies').select('base_currency_code').eq('id', companyId).maybeSingle();
+  return (data as { base_currency_code: string } | null)?.base_currency_code ?? 'USD';
 }
 export interface ContainerRow {
   id: string; container_no: string | null; iso_type: string | null; size: string | null;
@@ -204,7 +213,7 @@ export async function getShipmentCharges(shipmentId: string): Promise<ChargeRow[
   if (!companyId) return [];
   const { data } = await freight
     .from('charges')
-    .select('id, kind, description, charge_code, amount, currency_code, contact_id, invoiced')
+    .select('id, kind, description, charge_code, amount, currency_code, fx_rate, base_amount, contact_id, invoiced')
     .eq('company_id', companyId)
     .eq('shipment_id', shipmentId)
     .order('created_at');

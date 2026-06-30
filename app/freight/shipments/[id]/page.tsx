@@ -5,7 +5,7 @@ import { formatDate, formatMoney } from '@/lib/format';
 import {
   getShipment, getShipmentParties, getShipmentMilestones, getShipmentTasks,
   getShipmentCommunications, getShipmentCharges, getShipmentContainers, listContacts, getShipmentQuotes,
-  getShipmentDocuments, getShipmentBilling, getShipmentPayments, paymentStatus,
+  getShipmentDocuments, getShipmentBilling, getShipmentPayments, paymentStatus, getCompanyBaseCurrency,
 } from '@/modules/freight/queries';
 import {
   STAGE_ORDER, STAGE_LABELS, MODE_LABELS, DIRECTION_LABELS, CONTACT_ROLE_LABELS, nextStage,
@@ -76,10 +76,11 @@ export default async function ShipmentWorkspace({ params, searchParams }: { para
   const s = await getShipment(params.id);
   if (!s) notFound();
 
-  const [parties, milestones, tasks, comms, charges, containers, contacts, quotes, documents, billing, payments] = await Promise.all([
+  const [parties, milestones, tasks, comms, charges, containers, contacts, quotes, documents, billing, payments, baseCcy] = await Promise.all([
     getShipmentParties(s.id), getShipmentMilestones(s.id), getShipmentTasks(s.id),
     getShipmentCommunications(s.id), getShipmentCharges(s.id), getShipmentContainers(s.id), listContacts(),
     getShipmentQuotes(s.id), getShipmentDocuments(s.id), getShipmentBilling(s.id), getShipmentPayments(s.id),
+    getCompanyBaseCurrency(),
   ]);
   const payStat = paymentStatus(billing);
   const balanceDue = Math.max(0, billing.invoice_total - billing.amount_paid);
@@ -152,12 +153,12 @@ export default async function ShipmentWorkspace({ params, searchParams }: { para
         </div>
       </Section>
 
-      {/* Financial summary */}
+      {/* Financial summary — rollups are in the company base currency */}
       <Section title="Financial summary">
         <div className="card" style={{ padding: 18, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
-          <Detail label="Customer charges" value={<span className="num">{formatMoney(s.total_charge, ccy)}</span>} />
-          <Detail label="Supplier costs" value={<span className="num">{formatMoney(s.total_cost, ccy)}</span>} />
-          <Detail label="Expected profit" value={<span className="num" style={{ fontWeight: 650 }}>{formatMoney(s.expected_profit, ccy)}</span>} />
+          <Detail label={`Customer charges (${baseCcy})`} value={<span className="num">{formatMoney(s.total_charge, baseCcy)}</span>} />
+          <Detail label={`Supplier costs (${baseCcy})`} value={<span className="num">{formatMoney(s.total_cost, baseCcy)}</span>} />
+          <Detail label={`Expected profit (${baseCcy})`} value={<span className="num" style={{ fontWeight: 650 }}>{formatMoney(s.expected_profit, baseCcy)}</span>} />
         </div>
       </Section>
 
@@ -460,13 +461,14 @@ export default async function ShipmentWorkspace({ params, searchParams }: { para
         {charges.length > 0 ? (
           <div className="table-wrap" style={{ marginBottom: 12 }}>
             <table className="table">
-              <thead><tr><th style={{ width: 90 }}>Kind</th><th>Description</th><th className="num" style={{ width: 160 }}>Amount</th><th style={{ width: 90 }}>Invoiced</th></tr></thead>
+              <thead><tr><th style={{ width: 90 }}>Kind</th><th>Description</th><th className="num" style={{ width: 150 }}>Amount</th><th className="num" style={{ width: 150 }}>Base ({baseCcy})</th><th style={{ width: 80 }}>Invoiced</th></tr></thead>
               <tbody>
                 {charges.map((c) => (
                   <tr key={c.id}>
                     <td><span className={`badge ${c.kind === 'charge' ? 'badge-success' : 'badge-warning'}`}>{c.kind === 'charge' ? 'Charge' : 'Cost'}</span></td>
                     <td>{c.description}{c.charge_code ? <span className="muted"> · {c.charge_code}</span> : null}</td>
-                    <td className="num">{formatMoney(c.amount, c.currency_code ?? ccy)}</td>
+                    <td className="num">{formatMoney(c.amount, c.currency_code ?? baseCcy)}</td>
+                    <td className="num">{formatMoney(c.base_amount, baseCcy)}</td>
                     <td>{c.invoiced ? 'Yes' : 'No'}</td>
                   </tr>
                 ))}
@@ -481,8 +483,9 @@ export default async function ShipmentWorkspace({ params, searchParams }: { para
           </div>
           <div className="field" style={{ flex: 1, minWidth: 200 }}><label className="label">Description</label><input name="description" className="input" placeholder="e.g. Ocean freight" required /></div>
           <div className="field"><label className="label">Code</label><input name="charge_code" className="input" placeholder="OFR" style={{ width: 90 }} /></div>
-          <div className="field"><label className="label">Amount</label><input name="amount" type="number" step="0.01" className="input" style={{ width: 120 }} required /></div>
-          <div className="field"><label className="label">Ccy</label><input name="currency_code" className="input" defaultValue={ccy} maxLength={3} style={{ width: 70 }} /></div>
+          <div className="field"><label className="label">Amount</label><input name="amount" type="number" step="0.01" className="input" style={{ width: 110 }} required /></div>
+          <div className="field"><label className="label">Ccy</label><input name="currency_code" className="input" defaultValue={ccy} maxLength={3} style={{ width: 64 }} /></div>
+          <div className="field"><label className="label">FX→{baseCcy}</label><input name="fx_rate" type="number" step="0.0001" defaultValue={1} className="input" style={{ width: 90 }} title={`Rate from the charge currency to ${baseCcy}`} /></div>
           <button className="btn btn-ghost" type="submit">Add line</button>
         </form>
       </Section>

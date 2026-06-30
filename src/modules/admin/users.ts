@@ -171,12 +171,25 @@ export async function applyTemplate(input: { membershipId: string; roleKey: stri
       .eq('role_id', (role as { id: string }).id);
     const ids = ((rolePerms as { permission_id: string }[] | null) ?? []).map((r) => r.permission_id);
 
-    // Replace: clear current grants, then apply the template's set.
-    await core.from('membership_permissions').delete().eq('membership_id', input.membershipId);
-    if (ids.length > 0) {
+    // Apply as a DIFF (add missing, then remove extra) rather than delete-all-then-insert,
+    // so a failed insert never strips the member of all access (F-11). Add first, remove last.
+    const { data: cur } = await core.from('membership_permissions').select('permission_id').eq('membership_id', input.membershipId);
+    const have = new Set(((cur as { permission_id: string }[] | null) ?? []).map((r) => r.permission_id));
+    const want = new Set(ids);
+    const toAdd = [...want].filter((id) => !have.has(id));
+    const toRemove = [...have].filter((id) => !want.has(id));
+    if (toAdd.length > 0) {
       const { error } = await core
         .from('membership_permissions')
-        .insert(ids.map((permission_id) => ({ membership_id: input.membershipId, permission_id, granted_by: userId })));
+        .insert(toAdd.map((permission_id) => ({ membership_id: input.membershipId, permission_id, granted_by: userId })));
+      if (error) return { ok: false, error: error.message };
+    }
+    if (toRemove.length > 0) {
+      const { error } = await core
+        .from('membership_permissions')
+        .delete()
+        .eq('membership_id', input.membershipId)
+        .in('permission_id', toRemove);
       if (error) return { ok: false, error: error.message };
     }
     revalidatePath('/admin/users');

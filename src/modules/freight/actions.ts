@@ -216,14 +216,18 @@ export async function addCharge(formData: FormData): Promise<void> {
   const description = String(formData.get('description') ?? '').trim();
   const charge_code = String(formData.get('charge_code') ?? '').trim() || null;
   const amount = Number(formData.get('amount') ?? 0);
+  const fxRaw = formData.get('fx_rate');
+  const fx_rate = fxRaw ? Number(fxRaw) : 1;
   const currency_code = String(formData.get('currency_code') ?? '').trim().toUpperCase() || null;
   const contact_id = String(formData.get('contact_id') ?? '') || null;
   if (!shipment_id || !description) back(`/freight/shipments/${shipment_id}`, 'Description is required');
   if (!['cost', 'charge'].includes(kind)) back(`/freight/shipments/${shipment_id}`, 'Invalid charge kind');
 
+  const amt = Number.isFinite(amount) ? amount : 0;
+  const rate = Number.isFinite(fx_rate) && fx_rate > 0 ? fx_rate : 1; // rate to company base currency
   const { error } = await freight.from('charges').insert({
     company_id: companyId, shipment_id, kind, description, charge_code,
-    amount: Number.isFinite(amount) ? amount : 0, base_amount: Number.isFinite(amount) ? amount : 0,
+    amount: amt, fx_rate: rate, base_amount: amt * rate,
     currency_code, contact_id, created_by: ctx.user?.id ?? null,
   });
   if (error) back(`/freight/shipments/${shipment_id}`, error.message);
