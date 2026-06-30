@@ -30,9 +30,15 @@ export async function approveAiJob(formData: FormData): Promise<Result> {
     const id = String(formData.get('id') ?? '');
     if (!id) return { ok: false, error: 'Missing job id.' };
 
-    // TODO (per-task, when AI is switched on): load tool_calls and execute each via the
-    // executor registry (tool name → action core function), under this session's RLS.
-    // For pure infrastructure we record the approval and complete the job.
+    // A job reaches the queue only when the AI proposed tool calls. Executing those is
+    // the per-task seam that is NOT wired yet (pure infrastructure). Refuse rather than
+    // mark a proposed action 'done' without performing it — that would be a false success.
+    const { data: job } = await freight.from('ai_jobs').select('tool_calls').eq('id', id).maybeSingle();
+    const toolCalls = (job as { tool_calls: unknown[] | null } | null)?.tool_calls;
+    if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+      return { ok: false, error: 'This task proposes actions, but its executor is not wired yet. Wire the executor (approval.ts) before enabling action-producing AI tasks.' };
+    }
+
     const { error } = await freight.from('ai_jobs')
       .update({ status: 'done', approved_by: userId, completed_at: new Date().toISOString() })
       .eq('id', id).eq('status', 'awaiting_approval');
