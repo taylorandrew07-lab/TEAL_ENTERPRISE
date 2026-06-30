@@ -25,3 +25,6 @@ next-env.d.ts
 /coverage
 *.tsbuildinfo
 .vercel
+
+# stray temp paths
+*scratchpad*
