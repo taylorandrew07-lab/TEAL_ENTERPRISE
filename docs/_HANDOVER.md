@@ -99,7 +99,10 @@ End-to-end single workflow: **enquiry/RFQ → supplier quotes → customer quota
 
 ---
 
-## 5. Migrations (freight + security), 0019→0032
+## 5. Migrations (freight + security), 0019→0036
+(0033 client_access+user_customer_ids · 0034 portal_* views · 0035 notification prefs/read-state/portal-notif
+view+fns · 0036 notification triggers + re-created apply_stage_automation — see §7b.)
+
 0019 schema · 0020 RLS · 0021 functions(reference gen + stage automation) · 0022 quote refs · 0023 documents/email/
 tracking/notifications/import · 0024 container rates · 0025 **per-account isolation** (user_module_access, can_read,
 SELECT rewrite, self-role guard) · 0026 access_requests + privilege audit triggers · 0027 payment/release tables ·
@@ -162,8 +165,37 @@ vitest (42) + build all green. APPLIED:
 
 ---
 
+## 7b. CUSTOMER PORTAL — SHIPPED & LIVE (all 4 phases, 2026-06-30)
+External customers log in at **/portal** and see ONLY their own shipments. Built per
+`C:\Users\Andrew\.claude\plans\cryptic-orbiting-duckling.md`. Owner decisions: clients see tracking + quote +
+invoice/payment + free-time/demurrage (incl. penalty) + client-visible docs; **invite-only**; email via **M365
+(deferred)** so in-app works now and emails queue.
+- **Phase 1 (0033/0034):** `freight.client_access` (external user→customer contact, NEVER a company membership) +
+  `freight.user_customer_ids()`. The portal reads ONLY **security-definer `portal_*` views** (portal_shipments/
+  milestones/containers/documents/quote/quote_lines/billing/customer/notifications) — each exposes only safe
+  columns + scopes rows to the signed-in customer. No internal RLS changed; base tables stay staff-only.
+- **Phase 2:** internal routes moved under **`app/(internal)/`** (URLs unchanged) so `/portal` has its own minimal
+  shell. `getPortalContext`/`requirePortal` (`src/core/session/portal-{context,guard}.ts`), portal query layer
+  (`src/modules/freight/portal/queries.ts`, reads `portal_*` only; doc URLs signed via service role AFTER the view
+  authorises), pages: my shipments, tracking detail, documents, account, notifications.
+- **Phase 3:** invite-only access mgmt at **/freight/settings/portal** (`src/modules/freight/portal/admin.ts` —
+  grant/revoke/reset; membership-free; gated `freight.comms.manage`).
+- **Phase 4 (0035/0036):** `notification_preferences` + read-state; `portal_notifications` view + mark-read fns;
+  `enqueue_notification()` + re-created `apply_stage_automation()` (0021 body verbatim + arrival/delivery enqueue)
+  + ETA + free-time/demurrage triggers. In-app notification centre (bell/unread/mark-read) + opt-in prefs.
+  Pluggable `EmailSender` (NoopSender default; `M365GraphSender` stub via `FREIGHT_EMAIL_PROVIDER`) +
+  `dispatch.ts` (client_visible-only attachments). **Emails queue in `outbound_emails` and send only once M365
+  is wired.**
+- **Self-verifying deploy:** `supabase/tests/portal_isolation_test.sql` + `stage_automation_test.sql` run in the
+  db-migrate workflow (tx + rollback) — every deploy proves a portal user sees only their data, can't read base
+  tables, loses access on revoke, and that stage automation + notifications still fire. Both green on live.
+- **REMAINING for portal go-live:** wire the M365 connector to actually send queued emails (Azure app + mailbox
+  addresses + implement `M365GraphSender`/inbound linking); optional: schedule `dispatchOutboundEmails`. NOT yet
+  done: end-to-end manual click-through with a real granted portal user (build/typecheck/DB-tests pass, but the
+  portal UI hasn't been exercised in a running browser — do this when onboarding the first customer).
+
 ## 8. Next work (priority order)
-1. **Efficiency-audit cleanup — DONE** (see §7). Deferred items there are optional follow-ups, not blockers.
+1. **Efficiency-audit cleanup — DONE** (see §7). **Customer portal — DONE & live** (see §7b).
 2. **Bring it up for real use / onboard a test teammate**: create a teammate, Request access, approve, verify they
    see only that module, run a shipment RFQ→release. (Owner wanted to actually use it before extra features.)
 3. **Customer portal** (workstream A) — when ready: client-scoped access (mirror `cargo.client_access` pattern),
