@@ -11,7 +11,9 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/seed/**'
+      - 'supabase/tests/**'
       - 'scripts/db-migrate.mjs'
+      - 'scripts/db-test.mjs'
   workflow_dispatch: {}
 
 jobs:
@@ -26,5 +28,13 @@ jobs:
       - run: npm ci
       - name: Apply migrations + seed
         run: node scripts/db-migrate.mjs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Post-migration safety check: verify customer-portal isolation against the
+      # freshly-migrated DB. Runs in a transaction and ROLLS BACK (no persistent
+      # data). Fails the deploy if a portal user could read another customer's data,
+      # an internal document, or any base freight table.
+      - name: Verify portal isolation (rolled back)
+        run: node scripts/db-test.mjs supabase/tests/portal_isolation_test.sql
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
