@@ -569,6 +569,76 @@ export async function getShipmentDocuments(shipmentId: string): Promise<Shipment
   });
 }
 
+// ----------------------------------------------------------------------------- dashboard sections
+export interface ApprovalRow { id: string; reference: string | null; shipment_id: string; shipmentRef?: string | null; total_amount: number; currency_code: string | null; }
+export interface ArrivalRow { id: string; reference: string | null; eta: string | null; lane: string; customerName: string | null; stage: string; }
+export interface CommRow { id: string; channel: string; direction: string; subject: string | null; occurred_at: string; shipment_id: string | null; shipmentRef?: string | null; }
+
+export async function getPendingApprovals(limit = 8): Promise<ApprovalRow[]> {
+  const { freight, companyId } = await freightDb();
+  if (!companyId) return [];
+  const { data } = await freight.from('customer_quotes')
+    .select('id, reference, shipment_id, total_amount, currency_code')
+    .eq('company_id', companyId).eq('status', 'sent')
+    .order('sent_at', { ascending: true }).limit(limit);
+  return attachShipmentRefs((data as ApprovalRow[] | null) ?? []) as Promise<ApprovalRow[]>;
+}
+
+export async function getBookingsToConfirm(limit = 8): Promise<ArrivalRow[]> {
+  const { freight, companyId } = await freightDb();
+  if (!companyId) return [];
+  const { data } = await freight.from('shipments')
+    .select('id, reference, eta, origin_name, destination_name, stage, customer_contact_id')
+    .eq('company_id', companyId).eq('stage', 'customer_approval').eq('status', 'active')
+    .order('updated_at', { ascending: true }).limit(limit);
+  return shapeArrivals((data as any[] | null) ?? []);
+}
+
+export async function getArrivals(days = 14, limit = 8): Promise<ArrivalRow[]> {
+  const { freight, companyId } = await freightDb();
+  if (!companyId) return [];
+  const today = new Date(); const horizon = new Date(); horizon.setUTCDate(horizon.getUTCDate() + days);
+  const { data } = await freight.from('shipments')
+    .select('id, reference, eta, origin_name, destination_name, stage, customer_contact_id')
+    .eq('company_id', companyId).eq('status', 'active')
+    .gte('eta', today.toISOString().slice(0, 10)).lte('eta', horizon.toISOString().slice(0, 10))
+    .order('eta', { ascending: true }).limit(limit);
+  return shapeArrivals((data as any[] | null) ?? []);
+}
+
+async function shapeArrivals(rows: any[]): Promise<ArrivalRow[]> {
+  const names = await contactNameMap(rows.map((r) => r.customer_contact_id));
+  return rows.map((r) => ({
+    id: r.id, reference: r.reference, eta: r.eta, stage: r.stage,
+    lane: [r.origin_name, r.destination_name].filter(Boolean).join(' → '),
+    customerName: names.get(r.customer_contact_id) ?? null,
+  }));
+}
+
+export async function getAtRiskContainers(limit = 8): Promise<ContainerRow[]> {
+  const { freight, companyId } = await freightDb();
+  if (!companyId) return [];
+  const { data } = await freight.from('containers').select(CONTAINER_COLS)
+    .eq('company_id', companyId).is('returned_date', null);
+  const rows = (data as ContainerRow[] | null) ?? [];
+  const ranked = rows
+    .map((c) => ({ c, ft: computeFreeTime(c) }))
+    .filter((x) => x.ft.risk !== 'none')
+    .sort((a, b) => ({ overdue: 0, watch: 1, none: 2 } as Record<string, number>)[a.ft.risk] - ({ overdue: 0, watch: 1, none: 2 } as Record<string, number>)[b.ft.risk])
+    .slice(0, limit)
+    .map((x) => x.c);
+  return attachShipmentRefs(ranked as any) as Promise<ContainerRow[]>;
+}
+
+export async function getRecentCommunications(limit = 8): Promise<CommRow[]> {
+  const { freight, companyId } = await freightDb();
+  if (!companyId) return [];
+  const { data } = await freight.from('communications')
+    .select('id, channel, direction, subject, occurred_at, shipment_id')
+    .eq('company_id', companyId).order('occurred_at', { ascending: false }).limit(limit);
+  return attachShipmentRefs((data as CommRow[] | null) ?? []) as Promise<CommRow[]>;
+}
+
 // ----------------------------------------------------------------------------- helper
 async function attachShipmentRefs<T extends { shipment_id: string | null; shipmentRef?: string | null }>(rows: T[]): Promise<T[]> {
   const ids = [...new Set(rows.map((r) => r.shipment_id).filter(Boolean) as string[])];
