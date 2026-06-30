@@ -37,6 +37,7 @@ export const freightManifest: ModuleManifest = {
     { key: 'contacts', label: 'Contacts', path: 'contacts', icon: 'users', requires: 'freight.contacts.manage', group: 'Directory' },
     { key: 'documents', label: 'Documents', path: 'documents', icon: 'paperclip', requires: 'freight.documents.manage', group: 'Directory' },
     { key: 'settings', label: 'Settings', path: 'settings', icon: 'settings', requires: 'freight.comms.manage', group: 'Configuration' },
+    { key: 'portal', label: 'Customer portal', path: 'settings/portal', icon: 'users', requires: 'freight.comms.manage', group: 'Configuration' },
   ],
   permissions: [
     { key: 'freight.shipments.manage',  name: 'Manage shipments',        description: 'Create and edit shipments, advance lifecycle stage, manage tasks & milestones', category: 'freight' },
