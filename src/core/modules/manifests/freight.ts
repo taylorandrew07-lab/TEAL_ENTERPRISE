@@ -34,10 +34,12 @@ export const freightManifest: ModuleManifest = {
     { key: 'quotes', label: 'Quotes', path: 'quotes', icon: 'file-text', requires: 'freight.quotes.manage' },
     { key: 'tasks', label: 'Tasks', path: 'tasks', icon: 'clipboard-check', requires: 'freight.shipments.manage' },
     { key: 'containers', label: 'Containers', path: 'containers', icon: 'boxes', requires: 'freight.containers.manage' },
+    { key: 'ai', label: 'AI', path: 'ai', icon: 'sparkles', requires: 'freight.ai.manage' },
     { key: 'contacts', label: 'Contacts', path: 'contacts', icon: 'users', requires: 'freight.contacts.manage', group: 'Directory' },
     { key: 'documents', label: 'Documents', path: 'documents', icon: 'paperclip', requires: 'freight.documents.manage', group: 'Directory' },
     { key: 'settings', label: 'Settings', path: 'settings', icon: 'settings', requires: 'freight.comms.manage', group: 'Configuration' },
     { key: 'portal', label: 'Customer portal', path: 'settings/portal', icon: 'users', requires: 'freight.comms.manage', group: 'Configuration' },
+    { key: 'ai_settings', label: 'AI settings', path: 'settings/ai', icon: 'cpu', requires: 'freight.ai.manage', group: 'Configuration' },
   ],
   permissions: [
     { key: 'freight.shipments.manage',  name: 'Manage shipments',        description: 'Create and edit shipments, advance lifecycle stage, manage tasks & milestones', category: 'freight' },
