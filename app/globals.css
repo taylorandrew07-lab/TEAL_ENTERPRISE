@@ -337,6 +337,7 @@ a.card {
 }
 
 /* ---- App header ---- */
+/* Full indigo brand header. Children flip to light tones for contrast on indigo. */
 .app-header {
   position: sticky;
   top: 0;
@@ -348,34 +349,61 @@ a.card {
   flex-wrap: wrap;
   padding: 8px 18px;
   min-height: var(--header-h);
-  background: oklch(1 0 0 / 0.85);
-  backdrop-filter: saturate(180%) blur(8px);
-  /* Indigo brand accent bar across the very top. */
-  border-top: 3px solid var(--primary);
-  border-bottom: 1px solid var(--border);
+  background: var(--primary);
+  border-bottom: 1px solid var(--primary-strong);
 }
 .brand {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: var(--ink);
+  color: #fff;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 .brand:hover {
   text-decoration: none;
 }
+.brand-sub {
+  color: oklch(1 0 0 / 0.72);
+  font-weight: 600;
+}
+/* On the indigo header the mark inverts: white tile, indigo letter. */
 .brand-mark {
   display: inline-grid;
   place-items: center;
   width: 26px;
   height: 26px;
   border-radius: 7px;
-  background: var(--primary);
-  color: var(--primary-ink);
+  background: #fff;
+  color: var(--primary);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0;
+}
+
+/* Header controls (Admin link, account menu) on the indigo bar. */
+.app-header .nav-link {
+  color: oklch(1 0 0 / 0.85);
+}
+.app-header .nav-link:hover {
+  background: oklch(1 0 0 / 0.16);
+  color: #fff;
+}
+.app-header .account-trigger,
+.app-header .account-trigger-name {
+  color: #fff;
+}
+.app-header .account-trigger:hover,
+.app-header .account-trigger[aria-expanded='true'] {
+  background: oklch(1 0 0 / 0.16);
+  border-color: oklch(1 0 0 / 0.25);
+}
+.app-header .account-caret {
+  color: oklch(1 0 0 / 0.8);
+}
+.app-header .account-avatar {
+  background: #fff;
+  color: var(--primary);
 }
 
 /* ---- Account menu (header, top-right) ---- */

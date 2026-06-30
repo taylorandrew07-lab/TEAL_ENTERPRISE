@@ -14,7 +14,7 @@ export function AppShell({ ctx, children }: { ctx: PlatformContext; children: Re
         <Link href="/" className="brand">
           <span className="brand-mark">T</span>
           <span>
-            TEAL<span style={{ color: 'var(--muted)', fontWeight: 600 }}> Enterprise</span>
+            TEAL<span className="brand-sub"> Enterprise</span>
           </span>
         </Link>
 
