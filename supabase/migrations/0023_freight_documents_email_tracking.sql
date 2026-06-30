@@ -77,6 +77,9 @@ create index on freight.outbound_emails (company_id, shipment_id);
 -- -----------------------------------------------------------------------------
 -- Container tracking events (from a third-party tracking aggregator API)
 -- -----------------------------------------------------------------------------
+-- Containers (0019) need (company_id, id) exposed BEFORE the composite FK below.
+alter table freight.containers add constraint freight_containers_company_id_id_key unique (company_id, id);
+
 create table freight.tracking_events (
   id           uuid primary key default gen_random_uuid(),
   company_id   uuid not null references core.companies(id) on delete cascade,
@@ -96,9 +99,6 @@ create table freight.tracking_events (
 );
 create index on freight.tracking_events (company_id, container_id, occurred_at desc);
 create index on freight.tracking_events (company_id, shipment_id);
-
--- Containers need (company_id, id) exposed for the composite FKs above.
-alter table freight.containers add constraint freight_containers_company_id_id_key unique (company_id, id);
 
 -- -----------------------------------------------------------------------------
 -- Client notifications (ETAs, free-time, demurrage)
