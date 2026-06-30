@@ -8,12 +8,23 @@ import { redirect } from 'next/navigation';
 import { freightDb } from './context';
 import { computeFreeTime } from './freetime';
 import { getTrackingProvider } from './tracking';
-import { STAGE_ORDER } from './lifecycle';
+import { STAGE_ORDER, type ShipmentStage } from './lifecycle';
 
 function back(path: string, error?: string): never {
   // Only internal absolute paths — block external/protocol-relative open redirects.
   const safe = path.startsWith('/') && !path.startsWith('//') ? path : '/freight';
   redirect(error ? `${safe}?error=${encodeURIComponent(error)}` : safe);
+}
+
+// Advance a shipment forward to `target` only if it's currently behind it (never
+// move backwards). Keeps the job's stage in step with workflow actions (F-11).
+async function advanceShipmentTo(freight: any, companyId: string, shipmentId: string | null, target: ShipmentStage): Promise<void> {
+  if (!shipmentId) return;
+  const { data: sh } = await freight.from('shipments').select('stage').eq('id', shipmentId).eq('company_id', companyId).maybeSingle();
+  const cur = (sh as any)?.stage as ShipmentStage | undefined;
+  if (cur && STAGE_ORDER.indexOf(cur) < STAGE_ORDER.indexOf(target)) {
+    await freight.from('shipments').update({ stage: target }).eq('id', shipmentId).eq('company_id', companyId);
+  }
 }
 
 // ----------------------------------------------------------------------------- contacts
@@ -250,6 +261,7 @@ export async function createRfq(formData: FormData): Promise<void> {
     .insert({ company_id: companyId, shipment_id, due_by, status: 'draft', requested_by: ctx.user?.id ?? null })
     .select('id').single();
   if (error || !data) back('/freight/quotes/rfq/new', error?.message ?? 'Could not create RFQ');
+  await advanceShipmentTo(freight, companyId, shipment_id, 'rfq');
   revalidatePath('/freight/quotes');
   redirect(`/freight/quotes/rfq/${data.id}`);
 }
@@ -360,6 +372,7 @@ export async function createCustomerQuote(formData: FormData): Promise<void> {
     valid_until, created_by: ctx.user?.id ?? null,
   }).select('id').single();
   if (error || !data) back('/freight/quotes/customer/new', error?.message ?? 'Could not create quotation');
+  await advanceShipmentTo(freight, companyId, shipment_id, 'customer_quote');
   revalidatePath('/freight/quotes');
   redirect(`/freight/quotes/customer/${data.id}`);
 }
