@@ -126,17 +126,44 @@ cargo module-key mismatch; payment-release now DB-enforced; httpOnly cookies; re
 
 ---
 
-## 7. IN FLIGHT (check this first in a new session)
-**Efficiency / interconnection / dead-code audit workflow is RUNNING in the background.**
-- Run ID: `wf_76791348-e34` (task `wvgmmcww3`).
-- It returns: SAFE-TO-DELETE (verified-unused), OPTIMIZE (N+1/unbounded/per-request waste), REWIRE (duplication/
-  interconnection), KEEP-INTENTIONAL (the seams above). When it completes, triage honestly and apply the cleanup
-  (delete only verified-unused; never the intentional seams). Watch with `/workflows`.
+## 7. IN FLIGHT
+**Efficiency / interconnection / dead-code audit — DONE & applied** (run `wf_d318f007-52f`, 2026-06-30; 21
+findings, all 21 adversarially verified, 0 rejected). Cleanup commit applies the low-risk subset; typecheck +
+vitest (42) + build all green. APPLIED:
+- *Deleted dead code:* `getModuleForPath` (registry + barrel); `src/lib/supabase/client.ts` (unused browser
+  Supabase client — auth is fully server-side); `RfqRow.recipientCount/quoteCount`; `CompanyMember.roleKey/roleName`
+  (+ the dead `roles` join in listCompanyMembers); `Template.keys`/`allKeys` in the Users page; the unused `owner`
+  return field of `getPlatformAdminInfo`.
+- *Optimized:* freight dashboard `listShipments({limit:10})`; `getDashboardStats` now one parallel batch (was 4
+  serial round-trips) and no longer double-queries containers — new `getContainerRiskBoard()` fetches unreturned
+  containers ONCE and yields both the risk count and ranked list; `profitAndLoss` drops an O(accounts×lines)
+  `rows.find`; `getPlatformContext` folds the `user_module_access` read into its parallel batch.
+- *Rewired (dedup):* `RiskBadge` extracted to `freight/status.tsx` (was copy-pasted in 3 pages); accounting
+  base-currency reads consolidated to `accounting/context.ts` `activeBaseCurrency()` + `companyBaseCurrencyOf()`
+  (intercompany keeps its null contract); `listCurrencyCodes` defined once in `accounting/context.ts`.
+
+**DEFERRED by triage (verified-real but each wants its own careful pass — NOT done):**
+- *OPTIMIZE — unbounded list queries* (`listContacts`/`listAllContainers`/`listRfqs`/`listCustomerQuotes`/
+  `listOpenTasks` have no `.limit()`): needs real pagination (and a light id+name `listContactOptions` for the
+  workspace dropdowns), not a bare cap. Harmless at current volume.
+- *OPTIMIZE — `trialBalance` on the accounting dashboard* pulls the whole `general_ledger` per render for one
+  total: real fix is a DB SUM aggregate/RPC + matching the existing per-account-round-then-filter semantics. Touches
+  live financials → migration + care.
+- *REWIRE — `accountsByCategory`/`accountsForCompany`* (AR/AP/banking/intercompany): verifier says low-value and
+  risky (intercompany has a deliberate cross-company auth gate; AR/AP return different shapes). Leave or do minimally.
+- *REWIRE — shared `FormError` banner*: the danger-banner markup is copy-pasted across ~36 files (cargo + freight +
+  accounting's local `ErrorBanner`s + UserManagement's `bannerStyle`). Extract ONE `src/core/ui/FormError.tsx` and
+  sweep all of them — platform-wide, own task.
+- *REWIRE — RBAC role-template seeding* (`grantUserModule`/`inviteUser`/`applyTemplate`/`createCompany` each
+  hand-roll "role→role_permissions→membership_permissions"): extract `seedMembershipPermissionsFromRole(... mode:
+  add|replace)`. Security-sensitive (F-11 add-before-remove ordering, differing error idioms) → careful standalone.
+- One verify branch (a minor `{overdue,watch,none}` sort-order map duplicated in `queries.ts`/`containers/page.tsx`)
+  hit the workflow's output-retry cap and was dropped before reporting — trivial, fold into a shared const if touched.
 
 ---
 
 ## 8. Next work (priority order)
-1. **Apply the efficiency-audit cleanup** (when the workflow lands) — delete dead code, fix N+1s, consolidate dups.
+1. **Efficiency-audit cleanup — DONE** (see §7). Deferred items there are optional follow-ups, not blockers.
 2. **Bring it up for real use / onboard a test teammate**: create a teammate, Request access, approve, verify they
    see only that module, run a shipment RFQ→release. (Owner wanted to actually use it before extra features.)
 3. **Customer portal** (workstream A) — when ready: client-scoped access (mirror `cargo.client_access` pattern),

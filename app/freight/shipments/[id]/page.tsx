@@ -10,7 +10,7 @@ import {
 import {
   STAGE_ORDER, STAGE_LABELS, MODE_LABELS, DIRECTION_LABELS, CONTACT_ROLE_LABELS, nextStage,
 } from '@/modules/freight/lifecycle';
-import { StageBadge, ShipmentStatusBadge, QuoteStatusBadge, DocVisibilityBadge } from '@/modules/freight/status';
+import { StageBadge, ShipmentStatusBadge, QuoteStatusBadge, DocVisibilityBadge, RiskBadge } from '@/modules/freight/status';
 import {
   setShipmentStage, setShipmentStatus, addShipmentParty, createTask, setTaskStatus,
   addCommunication, addCharge, addContainer, updateContainer, recordManualTracking, refreshContainerTracking,
@@ -19,11 +19,10 @@ import {
 import { uploadShipmentDocument, deleteShipmentDocument } from '@/modules/freight/documents';
 
 const PAY_BADGE: Record<string, string> = { paid: 'badge-success', partial: 'badge-warning', unpaid: 'badge-danger', uninvoiced: 'badge-neutral' };
-import { computeFreeTime, riskLabel } from '@/modules/freight/freetime';
+import { computeFreeTime } from '@/modules/freight/freetime';
 import { CARRIERS } from '@/modules/freight/tracking';
 import { TrackLinks } from '@/modules/freight/TrackLinks';
 
-const RISK_BADGE: Record<string, string> = { overdue: 'badge-danger', watch: 'badge-warning', none: 'badge-neutral' };
 const TRACK_OPTIONS = CARRIERS.filter((c) => c.track).map((c) => ({ key: c.key, name: c.name, track: c.track as string }));
 
 const DOC_TYPES: { value: string; label: string }[] = [
@@ -341,7 +340,7 @@ export default async function ShipmentWorkspace({ params, searchParams }: { para
                     <strong>{c.container_no ?? 'Container'} <span className="muted" style={{ fontWeight: 400 }}>{[c.iso_type, c.size].filter(Boolean).join(' · ')}</span></strong>
                     <span className="row" style={{ gap: 8 }}>
                       {ft.estPenalty > 0 ? <span className="num" style={{ fontWeight: 650, color: 'var(--danger)' }}>{formatMoney(ft.estPenalty, ft.rateCurrency ?? ccy)}</span> : null}
-                      <span className={`badge ${RISK_BADGE[ft.risk]}`}>{riskLabel(ft)}</span>
+                      <RiskBadge status={ft} />
                     </span>
                   </div>
                   <div className="muted" style={{ fontSize: 'var(--text-sm)', margin: '4px 0 10px' }}>

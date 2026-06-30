@@ -3,14 +3,12 @@ import { requireModule } from '@/core/session/guard';
 import { formatDate, formatMoney } from '@/lib/format';
 import {
   getDashboardStats, listShipments, getPendingApprovals, getBookingsToConfirm,
-  getArrivals, getAtRiskContainers, getRecentCommunications,
+  getArrivals, getContainerRiskBoard, getRecentCommunications,
 } from '@/modules/freight/queries';
-import { computeFreeTime, riskLabel } from '@/modules/freight/freetime';
-import { StageBadge } from '@/modules/freight/status';
+import { computeFreeTime } from '@/modules/freight/freetime';
+import { StageBadge, RiskBadge } from '@/modules/freight/status';
 
 export const metadata = { title: 'Dashboard — Jupiter Logistics' };
-
-const RISK_BADGE: Record<string, string> = { overdue: 'badge-danger', watch: 'badge-warning', none: 'badge-neutral' };
 
 function Stat({ label, value, href, accent }: { label: string; value: number; href?: string; accent?: boolean }) {
   const inner = (
@@ -49,9 +47,9 @@ function Item({ href, left, right }: { href: string; left: React.ReactNode; righ
 
 export default async function FreightDashboard() {
   await requireModule('freight');
-  const [stats, recent, approvals, bookings, arrivals, atRisk, comms] = await Promise.all([
-    getDashboardStats(), listShipments(), getPendingApprovals(), getBookingsToConfirm(),
-    getArrivals(), getAtRiskContainers(), getRecentCommunications(),
+  const [stats, recent, approvals, bookings, arrivals, riskBoard, comms] = await Promise.all([
+    getDashboardStats(), listShipments({ limit: 10 }), getPendingApprovals(), getBookingsToConfirm(),
+    getArrivals(), getContainerRiskBoard(), getRecentCommunications(),
   ]);
 
   return (
@@ -76,7 +74,7 @@ export default async function FreightDashboard() {
         <Stat label="Quotes sent" value={stats.pendingQuotes} href="/freight/quotes" />
         <Stat label="Open tasks" value={stats.openTasks} href="/freight/tasks" />
         <Stat label="Arriving ≤7 days" value={stats.arrivingSoon} />
-        <Stat label="Free-time risk" value={stats.freeTimeRisk} href="/freight/containers" accent />
+        <Stat label="Free-time risk" value={riskBoard.riskCount} href="/freight/containers" accent />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
@@ -90,15 +88,12 @@ export default async function FreightDashboard() {
             ))}
           </Panel>
 
-          <Panel title="Free-time / demurrage risk" count={atRisk.length} href="/freight/containers" empty="No containers at risk.">
-            {atRisk.map((c) => {
-              const ft = computeFreeTime(c);
-              return (
-                <Item key={c.id} href={c.shipment_id ? `/freight/shipments/${c.shipment_id}` : '/freight/containers'}
-                  left={<><span style={{ fontWeight: 600, color: 'var(--ink)' }}>{c.container_no ?? 'Container'}</span> <span className="muted">{c.shipmentRef ?? ''}</span></>}
-                  right={<span className={`badge ${RISK_BADGE[ft.risk]}`}>{riskLabel(ft)}</span>} />
-              );
-            })}
+          <Panel title="Free-time / demurrage risk" count={riskBoard.atRisk.length} href="/freight/containers" empty="No containers at risk.">
+            {riskBoard.atRisk.map((c) => (
+              <Item key={c.id} href={c.shipment_id ? `/freight/shipments/${c.shipment_id}` : '/freight/containers'}
+                left={<><span style={{ fontWeight: 600, color: 'var(--ink)' }}>{c.container_no ?? 'Container'}</span> <span className="muted">{c.shipmentRef ?? ''}</span></>}
+                right={<RiskBadge status={computeFreeTime(c)} />} />
+            ))}
           </Panel>
 
           <Panel title="Bookings to confirm" count={bookings.length} href="/freight/shipments" empty="No approved shipments awaiting booking.">

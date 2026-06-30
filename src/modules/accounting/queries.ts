@@ -1,6 +1,6 @@
 // Read-side data access for the Accounting module (server components). All queries
 // run through RLS as the current user; the active company scopes every result.
-import { accountingDb } from './context';
+import { accountingDb, activeBaseCurrency } from './context';
 
 export type AccountCategory = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
 export type NormalBalance = 'debit' | 'credit';
@@ -90,15 +90,7 @@ export async function listPostableAccounts(): Promise<{ id: string; code: string
 }
 
 export async function companyBaseCurrency(): Promise<string> {
-  const { supabase, companyId } = await accountingDb();
-  if (!companyId) return 'TTD';
-  const { data } = await supabase
-    .schema('core')
-    .from('companies')
-    .select('base_currency_code')
-    .eq('id', companyId)
-    .maybeSingle();
-  return data?.base_currency_code ?? 'TTD';
+  return activeBaseCurrency();
 }
 
 export interface TrialBalanceRow {

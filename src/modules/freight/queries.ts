@@ -129,7 +129,7 @@ export async function getContact(id: string): Promise<ContactRow | null> {
 }
 
 // ----------------------------------------------------------------------------- shipments
-export async function listShipments(filter?: { stage?: string; status?: string }): Promise<ShipmentRow[]> {
+export async function listShipments(filter?: { stage?: string; status?: string; limit?: number }): Promise<ShipmentRow[]> {
   const { freight, companyId } = await freightDb();
   if (!companyId) return [];
   let q = freight
@@ -139,6 +139,7 @@ export async function listShipments(filter?: { stage?: string; status?: string }
     .order('created_at', { ascending: false });
   if (filter?.stage) q = q.eq('stage', filter.stage);
   if (filter?.status) q = q.eq('status', filter.status);
+  if (filter?.limit) q = q.limit(filter.limit);
   const { data } = await q;
   const rows = (data as any[] | null) ?? [];
   const names = await contactNameMap(rows.map((r) => r.customer_contact_id));
@@ -291,58 +292,41 @@ export interface DashboardStats {
   awaitingApproval: number;
   openTasks: number;
   arrivingSoon: number;
-  freeTimeRisk: number;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const { freight, companyId } = await freightDb();
-  const empty: DashboardStats = { activeShipments: 0, inTransit: 0, pendingQuotes: 0, awaitingApproval: 0, openTasks: 0, arrivingSoon: 0, freeTimeRisk: 0 };
+  const empty: DashboardStats = { activeShipments: 0, inTransit: 0, pendingQuotes: 0, awaitingApproval: 0, openTasks: 0, arrivingSoon: 0 };
   if (!companyId) return empty;
 
-  const count = async (build: (q: any) => any): Promise<number> => {
-    const base = freight.from('shipments').select('id', { count: 'exact', head: true }).eq('company_id', companyId);
-    const { count: c } = await build(base);
-    return c ?? 0;
-  };
+  const count = (build: (q: any) => any) =>
+    build(freight.from('shipments').select('id', { count: 'exact', head: true }).eq('company_id', companyId));
 
-  const [activeShipments, inTransit, awaitingApproval] = await Promise.all([
+  // arriving within 7 days
+  const today = new Date().toISOString().slice(0, 10);
+  const horizon = new Date(); horizon.setUTCDate(horizon.getUTCDate() + 7);
+  const horizonStr = horizon.toISOString().slice(0, 10);
+
+  // All independent counts issue concurrently (no data dependency between them).
+  const [activeShipments, inTransit, awaitingApproval, pendingQuotes, openTasks, arrivingSoon] = await Promise.all([
     count((q) => q.eq('status', 'active')),
     count((q) => q.eq('stage', 'in_transit')),
     count((q) => q.eq('stage', 'customer_approval')),
+    freight.from('customer_quotes').select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId).eq('status', 'sent'),
+    freight.from('tasks').select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId).neq('status', 'done').neq('status', 'cancelled'),
+    freight.from('shipments').select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId).gte('eta', today).lte('eta', horizonStr),
   ]);
 
-  const { count: pendingQuotes } = await freight
-    .from('customer_quotes').select('id', { count: 'exact', head: true })
-    .eq('company_id', companyId).eq('status', 'sent');
-
-  const { count: openTasks } = await freight
-    .from('tasks').select('id', { count: 'exact', head: true })
-    .eq('company_id', companyId).neq('status', 'done').neq('status', 'cancelled');
-
-  // arriving within 7 days
-  const horizon = new Date(); horizon.setUTCDate(horizon.getUTCDate() + 7);
-  const { count: arrivingSoon } = await freight
-    .from('shipments').select('id', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .gte('eta', new Date().toISOString().slice(0, 10))
-    .lte('eta', horizon.toISOString().slice(0, 10));
-
-  // free-time risk: containers not yet returned, with demurrage/detention incurred or free time running out
-  const { data: ctrs } = await freight
-    .from('containers')
-    .select('free_time_days, discharge_date, gate_out_date, returned_date')
-    .eq('company_id', companyId).is('returned_date', null);
-  const freeTimeRisk = ((ctrs as any[] | null) ?? [])
-    .map((c) => computeFreeTime(c).risk).filter((r) => r !== 'none').length;
-
   return {
-    activeShipments,
-    inTransit,
-    awaitingApproval,
-    pendingQuotes: pendingQuotes ?? 0,
-    openTasks: openTasks ?? 0,
-    arrivingSoon: arrivingSoon ?? 0,
-    freeTimeRisk,
+    activeShipments: activeShipments.count ?? 0,
+    inTransit: inTransit.count ?? 0,
+    awaitingApproval: awaitingApproval.count ?? 0,
+    pendingQuotes: pendingQuotes.count ?? 0,
+    openTasks: openTasks.count ?? 0,
+    arrivingSoon: arrivingSoon.count ?? 0,
   };
 }
 
@@ -350,7 +334,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 export interface RfqRow {
   id: string; reference: string | null; status: string; due_by: string | null;
   shipment_id: string | null; shipmentRef?: string | null; created_at: string;
-  recipientCount?: number; quoteCount?: number;
 }
 export interface RecipientRow {
   id: string; contact_id: string; status: string; sent_at: string | null; responded_at: string | null; contactName: string | null;
@@ -661,19 +644,24 @@ async function shapeArrivals(rows: any[]): Promise<ArrivalRow[]> {
   }));
 }
 
-export async function getAtRiskContainers(limit = 8): Promise<ContainerRow[]> {
+// Free-time/demurrage board for the dashboard. Fetches the unreturned containers ONCE
+// and derives both the at-risk count and the ranked top-N list from the single result
+// (computeFreeTime runs once per row), instead of querying + recomputing twice.
+export interface ContainerRiskBoard { riskCount: number; atRisk: ContainerRow[]; }
+
+export async function getContainerRiskBoard(limit = 8): Promise<ContainerRiskBoard> {
   const { freight, companyId } = await freightDb();
-  if (!companyId) return [];
+  if (!companyId) return { riskCount: 0, atRisk: [] };
   const { data } = await freight.from('containers').select(CONTAINER_COLS)
     .eq('company_id', companyId).is('returned_date', null);
   const rows = (data as ContainerRow[] | null) ?? [];
-  const ranked = rows
-    .map((c) => ({ c, ft: computeFreeTime(c) }))
-    .filter((x) => x.ft.risk !== 'none')
+  const scored = rows.map((c) => ({ c, ft: computeFreeTime(c) })).filter((x) => x.ft.risk !== 'none');
+  const ranked = scored
     .sort((a, b) => ({ overdue: 0, watch: 1, none: 2 } as Record<string, number>)[a.ft.risk] - ({ overdue: 0, watch: 1, none: 2 } as Record<string, number>)[b.ft.risk])
     .slice(0, limit)
     .map((x) => x.c);
-  return attachShipmentRefs(ranked as any) as Promise<ContainerRow[]>;
+  const atRisk = await attachShipmentRefs(ranked as any) as ContainerRow[];
+  return { riskCount: scored.length, atRisk };
 }
 
 export async function getRecentCommunications(limit = 8): Promise<CommRow[]> {

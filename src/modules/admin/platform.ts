@@ -27,9 +27,9 @@ async function requireSuperAdmin(): Promise<{ userId: string }> {
   return { userId: ctx.user.id };
 }
 
-export async function getPlatformAdminInfo(): Promise<{ owner: string | null; admins: SuperAdminRow[] }> {
+export async function getPlatformAdminInfo(): Promise<{ admins: SuperAdminRow[] }> {
   const ctx = await getPlatformContext();
-  if (!ctx.user || !ctx.isSuperAdmin) return { owner: null, admins: [] };
+  if (!ctx.user || !ctx.isSuperAdmin) return { admins: [] };
   const core = (await createClient()).schema('core');
   const [{ data: supers }, { data: settings }] = await Promise.all([
     core.from('users').select('id, full_name, email').eq('is_super_admin', true),
@@ -39,7 +39,7 @@ export async function getPlatformAdminInfo(): Promise<{ owner: string | null; ad
   const admins = ((supers as any[] | null) ?? [])
     .map((u) => ({ id: u.id, name: u.full_name, email: u.email, isOwner: u.id === ownerId, isSelf: u.id === ctx.user!.id }))
     .sort((a, b) => Number(b.isOwner) - Number(a.isOwner));
-  return { owner: ownerId, admins };
+  return { admins };
 }
 
 export async function transferOwner(formData: FormData): Promise<void> {

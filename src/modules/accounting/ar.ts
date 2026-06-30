@@ -7,7 +7,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { accountingDb } from './context';
+import { accountingDb, activeBaseCurrency } from './context';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -161,15 +161,7 @@ export async function listTaxCodes(): Promise<TaxCode[]> {
 }
 
 export async function companyBaseCurrencyAR(): Promise<string> {
-  const { supabase, companyId } = await accountingDb();
-  if (!companyId) return 'TTD';
-  const { data } = await supabase
-    .schema('core')
-    .from('companies')
-    .select('base_currency_code')
-    .eq('id', companyId)
-    .maybeSingle();
-  return data?.base_currency_code ?? 'TTD';
+  return activeBaseCurrency();
 }
 
 export interface InvoiceLineDetail {

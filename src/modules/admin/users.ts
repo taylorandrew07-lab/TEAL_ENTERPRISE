@@ -44,7 +44,7 @@ export async function listCompanyMembers(): Promise<CompanyMember[]> {
 
   const { data: memberships } = await core
     .from('company_memberships')
-    .select('id, user_id, status, role:roles(key, name)')
+    .select('id, user_id, status')
     .eq('company_id', companyId)
     .eq('status', 'active');
   const rows = (memberships as any[] | null) ?? [];
@@ -79,8 +79,6 @@ export async function listCompanyMembers(): Promise<CompanyMember[]> {
       userId: m.user_id,
       fullName: dirById.get(m.user_id)?.full_name ?? null,
       email: dirById.get(m.user_id)?.email ?? null,
-      roleKey: m.role?.key ?? null,
-      roleName: m.role?.name ?? null,
       isSuperAdmin: Boolean(superById.get(m.user_id)),
       isSelf: m.user_id === ctx.user!.id,
       grantedKeys: grantsByMembership.get(m.id) ?? [],

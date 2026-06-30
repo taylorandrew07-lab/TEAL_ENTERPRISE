@@ -1,5 +1,6 @@
 import { requireModule } from '@/core/session/guard';
-import { listExchangeRates, listCurrencyCodes, addExchangeRate, deleteExchangeRate } from '@/modules/accounting/rates';
+import { listExchangeRates, addExchangeRate, deleteExchangeRate } from '@/modules/accounting/rates';
+import { listCurrencyCodes } from '@/modules/accounting/context';
 import { formatDate } from '@/lib/format';
 import { DeleteButton } from '@/core/ui/DeleteButton';
 

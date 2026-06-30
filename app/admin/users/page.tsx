@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getPlatformContext } from '@/core/session/context';
 import { can } from '@/core/session/types';
-import { allPermissions, allPermissionKeys, SYSTEM_ROLES } from '@/core/rbac/catalog';
+import { allPermissions, SYSTEM_ROLES } from '@/core/rbac/catalog';
 import { listCompanyMembers } from '@/modules/admin/users';
 import { UserManagement } from '@/modules/admin/UserManagement';
 
@@ -40,11 +40,9 @@ export default async function UsersPage() {
     .map((cat) => ({ category: cat, label: CATEGORY_LABELS[cat] ?? cat, perms: byCat.get(cat)! }));
 
   // Assignable role templates (exclude super-admin and external client roles).
-  const allKeys = allPermissionKeys();
   const templates = SYSTEM_ROLES.filter((r) => r.key !== 'super_admin' && !r.key.includes('client')).map((r) => ({
     key: r.key,
     name: r.name,
-    keys: r.grants === 'all' ? allKeys : r.grants,
   }));
 
   return (

@@ -94,7 +94,7 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
     // active membership's per-user permission grants (the authoritative source that
     // RLS also reads). Super admins hold every catalogue permission.
     const activeMembershipId = membershipByCompany.get(activeCompanyId) ?? null;
-    const [enabledRowsRes, permsRes] = await Promise.all([
+    const [enabledRowsRes, permsRes, umaRes] = await Promise.all([
       core
         .from('company_modules')
         .select('enabled, module:modules(key)')
@@ -106,6 +106,15 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
             .select('permission:permissions(key)')
             .eq('membership_id', activeMembershipId)
         : Promise.resolve({ data: null } as { data: null }),
+      // Per-ACCOUNT module isolation grants (read in the same batch — depends only on
+      // authUser.id + activeCompanyId, both known here).
+      !isSuperAdmin
+        ? core
+            .from('user_module_access')
+            .select('module_key')
+            .eq('user_id', authUser.id)
+            .eq('company_id', activeCompanyId)
+        : Promise.resolve({ data: null } as { data: null }),
     ]);
 
     let enabledModuleKeys: string[] = (enabledRowsRes.data ?? [])
@@ -116,12 +125,7 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
     // sees a module if they hold an explicit grant in core.user_module_access for the
     // active company. Super admins see every enabled module. Fail-closed: no grant → no module.
     if (!isSuperAdmin) {
-      const { data: uma } = await core
-        .from('user_module_access')
-        .select('module_key')
-        .eq('user_id', authUser.id)
-        .eq('company_id', activeCompanyId);
-      const granted = new Set(((uma as { module_key: string }[] | null) ?? []).map((r) => r.module_key));
+      const granted = new Set(((umaRes.data as { module_key: string }[] | null) ?? []).map((r) => r.module_key));
       enabledModuleKeys = enabledModuleKeys.filter((k) => granted.has(k));
     }
 

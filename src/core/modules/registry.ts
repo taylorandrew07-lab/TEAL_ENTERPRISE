@@ -22,11 +22,6 @@ export function getModule(key: string): ModuleManifest | undefined {
   return BY_KEY.get(key);
 }
 
-/** Resolve a module from a request path, e.g. '/fuel-assurance/reviews' -> fuel manifest. */
-export function getModuleForPath(pathname: string): ModuleManifest | undefined {
-  return MODULES.find((m) => pathname === m.route || pathname.startsWith(m.route + '/'));
-}
-
 /**
  * Modules visible in the launcher for a company + user.
  * @param enabledKeys  module keys enabled for the active company (core.company_modules).

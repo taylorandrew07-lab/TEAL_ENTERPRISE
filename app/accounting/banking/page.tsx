@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { requireModule } from '@/core/session/guard';
-import { listBanks, addBank, addAccount, listCurrencyCodes, listGlAssetAccounts, deleteBank } from '@/modules/accounting/banking';
+import { listBanks, addBank, addAccount, listGlAssetAccounts, deleteBank } from '@/modules/accounting/banking';
+import { listCurrencyCodes } from '@/modules/accounting/context';
 import { formatMoney } from '@/lib/format';
 import { DeleteButton } from '@/core/ui/DeleteButton';
 

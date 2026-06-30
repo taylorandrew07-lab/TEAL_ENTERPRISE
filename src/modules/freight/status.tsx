@@ -2,6 +2,7 @@
 // the shared .badge utility classes from globals.css). Colour follows the coarse
 // lifecycle phase so the list scans quickly.
 import { STAGE_LABELS, stagePhase, type ShipmentStage, type ShipmentStatus } from './lifecycle';
+import { riskLabel, type FreeTimeStatus } from './freetime';
 
 const PHASE_BADGE: Record<ReturnType<typeof stagePhase>, string> = {
   quoting: 'badge-warning',
@@ -51,4 +52,12 @@ const VIS_BADGE: Record<string, { cls: string; label: string }> = {
 export function DocVisibilityBadge({ visibility }: { visibility: string }) {
   const v = VIS_BADGE[visibility] ?? VIS_BADGE.internal;
   return <span className={`badge ${v.cls}`}>{v.label}</span>;
+}
+
+// Container free-time / demurrage risk → badge. Pairs the colour with the human
+// label from freetime.ts so every list renders the risk identically.
+const RISK_BADGE: Record<string, string> = { overdue: 'badge-danger', watch: 'badge-warning', none: 'badge-neutral' };
+
+export function RiskBadge({ status }: { status: FreeTimeStatus }) {
+  return <span className={`badge ${RISK_BADGE[status.risk] ?? 'badge-neutral'}`}>{riskLabel(status)}</span>;
 }

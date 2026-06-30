@@ -15,7 +15,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { accountingDb } from './context';
+import { accountingDb, companyBaseCurrencyOf } from './context';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -134,14 +134,7 @@ export async function accountsForCompany(
 
 /** Base currency for a company the user can see (used to label / stamp the transfer). */
 async function companyBaseCurrency(companyId: string): Promise<string | null> {
-  const { supabase } = await accountingDb();
-  const { data } = await supabase
-    .schema('core')
-    .from('companies')
-    .select('base_currency_code')
-    .eq('id', companyId)
-    .maybeSingle();
-  return data?.base_currency_code ?? null;
+  return companyBaseCurrencyOf(companyId);
 }
 
 // -----------------------------------------------------------------------------

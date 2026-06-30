@@ -69,12 +69,12 @@ export async function profitAndLoss(): Promise<ProfitAndLoss> {
   const rows = await fetchGL();
   const hasData = rows.length > 0;
 
-  const acc = new Map<string, { account_code: string; account_name: string; debit: number; credit: number }>();
+  const acc = new Map<string, { account_code: string; account_name: string; category: AccountCategory; debit: number; credit: number }>();
   for (const row of rows) {
     if (row.account_category !== 'income' && row.account_category !== 'expense') continue;
     let m = acc.get(row.account_id);
     if (!m) {
-      m = { account_code: row.account_code, account_name: row.account_name, debit: 0, credit: 0 };
+      m = { account_code: row.account_code, account_name: row.account_name, category: row.account_category, debit: 0, credit: 0 };
       acc.set(row.account_id, m);
     }
     m.debit += row.base_debit;
@@ -84,7 +84,7 @@ export async function profitAndLoss(): Promise<ProfitAndLoss> {
   const income: PLAccountRow[] = [];
   const expenses: PLAccountRow[] = [];
   for (const [account_id, m] of acc) {
-    const isIncome = rows.find((r) => r.account_id === account_id)!.account_category === 'income';
+    const isIncome = m.category === 'income';
     const amount = r2(isIncome ? m.credit - m.debit : m.debit - m.credit);
     if (amount === 0) continue;
     const out = { account_id, account_code: m.account_code, account_name: m.account_name, amount };

@@ -6,7 +6,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { accountingDb } from './context';
+import { accountingDb, activeBaseCurrency } from './context';
 
 export async function deleteSupplier(formData: FormData): Promise<void> {
   const { acc, companyId } = await accountingDb();
@@ -129,15 +129,7 @@ async function accountsByCategory(category: 'expense' | 'liability'): Promise<Po
 }
 
 export async function companyBaseCurrencyAP(): Promise<string> {
-  const { supabase, companyId } = await accountingDb();
-  if (!companyId) return 'TTD';
-  const { data } = await supabase
-    .schema('core')
-    .from('companies')
-    .select('base_currency_code')
-    .eq('id', companyId)
-    .maybeSingle();
-  return data?.base_currency_code ?? 'TTD';
+  return activeBaseCurrency();
 }
 
 // -----------------------------------------------------------------------------

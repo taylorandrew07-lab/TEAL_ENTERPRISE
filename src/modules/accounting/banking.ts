@@ -130,12 +130,6 @@ export async function listMatchTargets(): Promise<MatchTarget[]> {
   return out;
 }
 
-export async function listCurrencyCodes(): Promise<string[]> {
-  const { acc } = await accountingDb();
-  const { data } = await acc.from('currencies').select('code').eq('is_active', true).order('code');
-  return ((data as { code: string }[] | null) ?? []).map((c) => c.code);
-}
-
 export async function listGlAssetAccounts(): Promise<{ id: string; code: string; name: string }[]> {
   const { acc, companyId } = await accountingDb();
   if (!companyId) return [];

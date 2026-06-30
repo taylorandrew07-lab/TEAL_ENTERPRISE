@@ -19,7 +19,6 @@ interface PermGroup {
 interface Template {
   key: string;
   name: string;
-  keys: string[];
 }
 
 export function UserManagement({

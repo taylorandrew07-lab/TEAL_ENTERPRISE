@@ -6,8 +6,6 @@ export interface CompanyMember {
   userId: string;
   fullName: string | null;
   email: string | null;
-  roleKey: string | null;
-  roleName: string | null;
   isSuperAdmin: boolean;
   isSelf: boolean;
   grantedKeys: string[];

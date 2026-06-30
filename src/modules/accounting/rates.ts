@@ -9,7 +9,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { accountingDb } from './context';
+import { accountingDb, activeBaseCurrency } from './context';
 
 const round = (n: number, d = 2) => {
   const f = Math.pow(10, d);
@@ -21,10 +21,7 @@ function back(path: string, error?: string): never {
 }
 
 async function baseCurrency(): Promise<string> {
-  const { supabase, companyId } = await accountingDb();
-  if (!companyId) return 'TTD';
-  const { data } = await supabase.schema('core').from('companies').select('base_currency_code').eq('id', companyId).maybeSingle();
-  return data?.base_currency_code ?? 'TTD';
+  return activeBaseCurrency();
 }
 
 // -----------------------------------------------------------------------------
@@ -49,12 +46,6 @@ export async function listExchangeRates(): Promise<ExchangeRateRow[]> {
     .order('rate_date', { ascending: false })
     .limit(200);
   return ((data as any[] | null) ?? []).map((r) => ({ ...r, rate: Number(r.rate) }));
-}
-
-export async function listCurrencyCodes(): Promise<string[]> {
-  const { acc } = await accountingDb();
-  const { data } = await acc.from('currencies').select('code').eq('is_active', true).order('code');
-  return ((data as { code: string }[] | null) ?? []).map((c) => c.code);
 }
 
 export async function addExchangeRate(formData: FormData): Promise<void> {

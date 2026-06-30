@@ -2,11 +2,10 @@ import Link from 'next/link';
 import { requireModule } from '@/core/session/guard';
 import { formatDate, formatMoney } from '@/lib/format';
 import { listAllContainers } from '@/modules/freight/queries';
-import { computeFreeTime, riskLabel } from '@/modules/freight/freetime';
+import { computeFreeTime } from '@/modules/freight/freetime';
+import { RiskBadge } from '@/modules/freight/status';
 
 export const metadata = { title: 'Containers — Jupiter Logistics' };
-
-const RISK_BADGE: Record<string, string> = { overdue: 'badge-danger', watch: 'badge-warning', none: 'badge-neutral' };
 
 export default async function ContainersPage() {
   await requireModule('freight', 'freight.containers.manage');
@@ -61,7 +60,7 @@ export default async function ContainersPage() {
                   <td style={{ textTransform: 'capitalize' }}>{c.status.replace(/_/g, ' ')}</td>
                   <td className="muted">{c.current_location ?? '—'}</td>
                   <td className="muted date">{formatDate(c.discharge_date)}</td>
-                  <td><span className={`badge ${RISK_BADGE[ft.risk]}`}>{riskLabel(ft)}</span></td>
+                  <td><RiskBadge status={ft} /></td>
                   <td className="num">{ft.estPenalty > 0 ? formatMoney(ft.estPenalty, ft.rateCurrency ?? 'USD') : '—'}</td>
                 </tr>
               ))}

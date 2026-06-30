@@ -9,7 +9,6 @@ export type {
 export {
   MODULES,
   getModule,
-  getModuleForPath,
   visibleModules,
   navForUser,
   allModulePermissions,
