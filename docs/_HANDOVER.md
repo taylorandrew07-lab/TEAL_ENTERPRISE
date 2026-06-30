@@ -99,9 +99,10 @@ End-to-end single workflow: **enquiry/RFQ → supplier quotes → customer quota
 
 ---
 
-## 5. Migrations (freight + security), 0019→0036
+## 5. Migrations (freight + security), 0019→0037
 (0033 client_access+user_customer_ids · 0034 portal_* views · 0035 notification prefs/read-state/portal-notif
-view+fns · 0036 notification triggers + re-created apply_stage_automation — see §7b.)
+view+fns · 0036 notification triggers + re-created apply_stage_automation · 0037 restore service_role grants on
+app schemas — see §7b.)
 
 0019 schema · 0020 RLS · 0021 functions(reference gen + stage automation) · 0022 quote refs · 0023 documents/email/
 tracking/notifications/import · 0024 container rates · 0025 **per-account isolation** (user_module_access, can_read,
@@ -189,10 +190,21 @@ invoice/payment + free-time/demurrage (incl. penalty) + client-visible docs; **i
 - **Self-verifying deploy:** `supabase/tests/portal_isolation_test.sql` + `stage_automation_test.sql` run in the
   db-migrate workflow (tx + rollback) — every deploy proves a portal user sees only their data, can't read base
   tables, loses access on revoke, and that stage automation + notifications still fire. Both green on live.
-- **REMAINING for portal go-live:** wire the M365 connector to actually send queued emails (Azure app + mailbox
-  addresses + implement `M365GraphSender`/inbound linking); optional: schedule `dispatchOutboundEmails`. NOT yet
-  done: end-to-end manual click-through with a real granted portal user (build/typecheck/DB-tests pass, but the
-  portal UI hasn't been exercised in a running browser — do this when onboarding the first customer).
+- **service_role grants fix (0037):** found via the E2E test — earlier migrations granted only to `authenticated`,
+  so `service_role` (server-only, bypasses RLS) had NO grants on core/accounting/cargo/freight. This had silently
+  broken the portal admin action (createAdminClient core.users lookup + email display). 0037 restores the standard
+  service_role grants + default privileges. (Any future service-role/webhook/cron code now works.)
+- **END-TO-END VERIFIED LIVE (2026-06-30):** a throwaway script seeded a real test customer + shipment in prod,
+  created a real portal login, signed in AS the customer, and ran 18 checks — all PASS: membership-free grant;
+  sign-in; portal_shipments scoped + cost/margin columns absent; base tables denied; client_visible-only docs;
+  sent quote (no margin) + lines; billing; container + penalty; arrival + eta_update notifications; mark-read RPC;
+  prefs write; revoke kills access. Test data fully cleaned up (no residue in prod). The portal DATA + SECURITY
+  layer is proven against production.
+- **REMAINING for portal go-live:** (1) wire the M365 connector to actually SEND the queued emails (Azure app +
+  mailbox addresses + implement `M365GraphSender`/inbound linking; optional: schedule `dispatchOutboundEmails`);
+  (2) only-structural-tested: the document signed-URL download (signing path verified, but not a real byte download
+  — internal-uploaded docs have bytes so it's fine) and the browser pixel rendering of the portal pages (the
+  underlying queries are all proven). Confirm both when onboarding the first real customer.
 
 ## 8. Next work (priority order)
 1. **Efficiency-audit cleanup — DONE** (see §7). **Customer portal — DONE & live** (see §7b).
