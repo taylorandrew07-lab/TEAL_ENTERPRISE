@@ -268,10 +268,10 @@ export async function inviteUser(input: { email: string; fullName: string; roleK
     const { data: rolePerms } = await core.from('role_permissions').select('permission_id').eq('role_id', roleId);
     const ids = ((rolePerms as { permission_id: string }[] | null) ?? []).map((r) => r.permission_id);
     if (ids.length > 0) {
-      await core
+      const { error: grantErr } = await core
         .from('membership_permissions')
-        .insert(ids.map((permission_id) => ({ membership_id: membershipId!, permission_id, granted_by: userId })))
-        .then(() => undefined);
+        .insert(ids.map((permission_id) => ({ membership_id: membershipId!, permission_id, granted_by: userId })));
+      if (grantErr) return { ok: false, error: `User added, but seeding permissions failed: ${grantErr.message}` };
     }
 
     revalidatePath('/admin/users');
