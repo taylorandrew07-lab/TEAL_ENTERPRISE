@@ -53,6 +53,13 @@ export default async function AdminHome() {
             description="Review and approve requests for module access. Approving grants that module to the account; you can fine-tune permissions afterward."
           />
         ) : null}
+        {ctx.isSuperAdmin ? (
+          <AdminCard
+            href={'/admin/platform' as Route}
+            title="Platform & owner"
+            description="Manage super admins and transfer ownership. The owner account is protected and can never be locked out."
+          />
+        ) : null}
       </div>
     </div>
   );
