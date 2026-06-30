@@ -458,6 +458,43 @@ export async function getShipmentQuotes(shipmentId: string): Promise<{ rfqs: Rfq
   return { rfqs: (rfqs as RfqRow[] | null) ?? [], customerQuotes: (cqs as CustomerQuoteRow[] | null) ?? [] };
 }
 
+// ----------------------------------------------------------------------------- payment & release
+export interface ShipmentBilling {
+  invoice_total: number; amount_paid: number; payment_terms: string;
+  released: boolean; released_at: string | null;
+}
+export interface PaymentRow {
+  id: string; amount: number; currency_code: string | null; method: string | null;
+  reference: string | null; paid_at: string | null;
+}
+
+export async function getShipmentBilling(shipmentId: string): Promise<ShipmentBilling> {
+  const empty: ShipmentBilling = { invoice_total: 0, amount_paid: 0, payment_terms: 'prepaid', released: false, released_at: null };
+  const { freight, companyId } = await freightDb();
+  if (!companyId) return empty;
+  const { data } = await freight.from('shipment_billing')
+    .select('invoice_total, amount_paid, payment_terms, released, released_at')
+    .eq('company_id', companyId).eq('shipment_id', shipmentId).maybeSingle();
+  return (data as ShipmentBilling | null) ?? empty;
+}
+
+export async function getShipmentPayments(shipmentId: string): Promise<PaymentRow[]> {
+  const { freight, companyId } = await freightDb();
+  if (!companyId) return [];
+  const { data } = await freight.from('shipment_payments')
+    .select('id, amount, currency_code, method, reference, paid_at')
+    .eq('company_id', companyId).eq('shipment_id', shipmentId)
+    .order('paid_at', { ascending: false });
+  return (data as PaymentRow[] | null) ?? [];
+}
+
+export function paymentStatus(b: ShipmentBilling): 'uninvoiced' | 'unpaid' | 'partial' | 'paid' {
+  if (!(b.invoice_total > 0)) return 'uninvoiced';
+  if (b.amount_paid <= 0) return 'unpaid';
+  if (b.amount_paid < b.invoice_total) return 'partial';
+  return 'paid';
+}
+
 // ----------------------------------------------------------------------------- global search
 export interface SearchResults {
   term: string;

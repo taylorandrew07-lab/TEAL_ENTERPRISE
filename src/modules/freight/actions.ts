@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import { freightDb } from './context';
 import { computeFreeTime } from './freetime';
 import { getTrackingProvider } from './tracking';
+import { STAGE_ORDER } from './lifecycle';
 
 function back(path: string, error?: string): never {
   // Only internal absolute paths — block external/protocol-relative open redirects.
@@ -398,6 +399,21 @@ export async function setCustomerQuoteStatus(formData: FormData): Promise<void> 
   if (status === 'approved' || status === 'rejected') patch.decided_at = new Date().toISOString();
   const { error } = await freight.from('customer_quotes').update(patch).eq('id', id).eq('company_id', companyId);
   if (error) back(`/freight/quotes/customer/${id}`, error.message);
+
+  // Approval auto-advances the job into booking so it flows on into tracking — one
+  // continuous workflow (the stage trigger then seeds booking tasks/milestones).
+  if (status === 'approved') {
+    const { data: cq } = await freight.from('customer_quotes').select('shipment_id').eq('id', id).eq('company_id', companyId).maybeSingle();
+    const shipmentId = (cq as any)?.shipment_id;
+    if (shipmentId) {
+      const { data: sh } = await freight.from('shipments').select('stage').eq('id', shipmentId).eq('company_id', companyId).maybeSingle();
+      const cur = (sh as any)?.stage;
+      if (cur && STAGE_ORDER.indexOf(cur) < STAGE_ORDER.indexOf('booking_confirmed')) {
+        await freight.from('shipments').update({ stage: 'booking_confirmed' }).eq('id', shipmentId).eq('company_id', companyId);
+      }
+    }
+  }
+
   revalidatePath(`/freight/quotes/customer/${id}`);
   back(`/freight/quotes/customer/${id}`);
 }
@@ -557,6 +573,82 @@ export async function refreshContainerTracking(formData: FormData): Promise<void
   if (upd.current_location) await freight.from('containers').update({ current_location: upd.current_location }).eq('id', container_id).eq('company_id', companyId);
   if (upd.eta) await freight.from('shipments').update({ eta: upd.eta.slice(0, 10) }).eq('id', shipment_id).eq('company_id', companyId);
 
+  revalidatePath(`/freight/shipments/${shipment_id}`);
+  back(`/freight/shipments/${shipment_id}`);
+}
+
+// ============================================================================= PAYMENT & RELEASE
+// Operational AR + the cargo-release gate (integration audit P0): don't release the
+// shipment / issue the delivery order until the customer has paid (unless on
+// open-account terms or an explicit finance override).
+
+async function recomputeAmountPaid(shipmentId: string, companyId: string, freight: any): Promise<number> {
+  const { data } = await freight.from('shipment_payments').select('amount').eq('company_id', companyId).eq('shipment_id', shipmentId);
+  return ((data as { amount: number }[] | null) ?? []).reduce((s, r) => s + Number(r.amount || 0), 0);
+}
+
+export async function setShipmentBilling(formData: FormData): Promise<void> {
+  const { freight, companyId } = await freightDb();
+  if (!companyId) back('/freight/shipments', 'No active company');
+  const shipment_id = String(formData.get('shipment_id') ?? '');
+  const invoice_total = Number(formData.get('invoice_total') ?? 0) || 0;
+  const payment_terms = String(formData.get('payment_terms') ?? 'prepaid');
+  if (!shipment_id) back('/freight/shipments', 'Missing shipment');
+  if (!['prepaid', 'open_account'].includes(payment_terms)) back(`/freight/shipments/${shipment_id}`, 'Invalid terms');
+
+  const { error } = await freight.from('shipment_billing')
+    .upsert({ company_id: companyId, shipment_id, invoice_total, payment_terms }, { onConflict: 'company_id,shipment_id' });
+  if (error) back(`/freight/shipments/${shipment_id}`, error.message);
+  revalidatePath(`/freight/shipments/${shipment_id}`);
+  back(`/freight/shipments/${shipment_id}`);
+}
+
+export async function recordShipmentPayment(formData: FormData): Promise<void> {
+  const { freight, companyId, ctx } = await freightDb();
+  if (!companyId) back('/freight/shipments', 'No active company');
+  const shipment_id = String(formData.get('shipment_id') ?? '');
+  const amount = Number(formData.get('amount') ?? 0);
+  const currency_code = String(formData.get('currency_code') ?? '').trim().toUpperCase() || null;
+  const method = String(formData.get('method') ?? '').trim() || null;
+  const reference = String(formData.get('reference') ?? '').trim() || null;
+  const paid_at = String(formData.get('paid_at') ?? '') || null;
+  if (!shipment_id || !(amount > 0)) back(`/freight/shipments/${shipment_id}`, 'Enter a payment amount');
+
+  const { error } = await freight.from('shipment_payments').insert({
+    company_id: companyId, shipment_id, amount, currency_code, method, reference, paid_at,
+    recorded_by: ctx.user?.id ?? null,
+  });
+  if (error) back(`/freight/shipments/${shipment_id}`, error.message);
+
+  const amount_paid = await recomputeAmountPaid(shipment_id, companyId, freight);
+  await freight.from('shipment_billing')
+    .upsert({ company_id: companyId, shipment_id, amount_paid }, { onConflict: 'company_id,shipment_id' });
+  revalidatePath(`/freight/shipments/${shipment_id}`);
+  back(`/freight/shipments/${shipment_id}`);
+}
+
+export async function releaseShipment(formData: FormData): Promise<void> {
+  const { freight, companyId, ctx } = await freightDb();
+  if (!companyId) back('/freight/shipments', 'No active company');
+  const shipment_id = String(formData.get('shipment_id') ?? '');
+  const override = String(formData.get('override') ?? '') === 'on';
+  if (!shipment_id) back('/freight/shipments', 'Missing shipment');
+
+  const { data: b } = await freight.from('shipment_billing')
+    .select('invoice_total, amount_paid, payment_terms, released').eq('company_id', companyId).eq('shipment_id', shipment_id).maybeSingle();
+  const billing = b as any;
+  const paidInFull = billing && Number(billing.invoice_total) > 0 && Number(billing.amount_paid) >= Number(billing.invoice_total);
+  const openAccount = billing?.payment_terms === 'open_account';
+
+  if (!paidInFull && !openAccount && !override) {
+    back(`/freight/shipments/${shipment_id}`, 'Payment outstanding — cannot release. Record payment, or tick "override" to release on credit.');
+  }
+
+  const { error } = await freight.from('shipment_billing').upsert({
+    company_id: companyId, shipment_id, released: true,
+    released_at: new Date().toISOString(), released_by: ctx.user?.id ?? null,
+  }, { onConflict: 'company_id,shipment_id' });
+  if (error) back(`/freight/shipments/${shipment_id}`, error.message);
   revalidatePath(`/freight/shipments/${shipment_id}`);
   back(`/freight/shipments/${shipment_id}`);
 }

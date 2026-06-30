@@ -5,7 +5,7 @@ import { formatDate, formatMoney } from '@/lib/format';
 import {
   getShipment, getShipmentParties, getShipmentMilestones, getShipmentTasks,
   getShipmentCommunications, getShipmentCharges, getShipmentContainers, listContacts, getShipmentQuotes,
-  getShipmentDocuments,
+  getShipmentDocuments, getShipmentBilling, getShipmentPayments, paymentStatus,
 } from '@/modules/freight/queries';
 import {
   STAGE_ORDER, STAGE_LABELS, MODE_LABELS, DIRECTION_LABELS, CONTACT_ROLE_LABELS, nextStage,
@@ -14,8 +14,11 @@ import { StageBadge, ShipmentStatusBadge, QuoteStatusBadge, DocVisibilityBadge }
 import {
   setShipmentStage, setShipmentStatus, addShipmentParty, createTask, setTaskStatus,
   addCommunication, addCharge, addContainer, updateContainer, recordManualTracking, refreshContainerTracking,
+  setShipmentBilling, recordShipmentPayment, releaseShipment,
 } from '@/modules/freight/actions';
 import { uploadShipmentDocument, deleteShipmentDocument } from '@/modules/freight/documents';
+
+const PAY_BADGE: Record<string, string> = { paid: 'badge-success', partial: 'badge-warning', unpaid: 'badge-danger', uninvoiced: 'badge-neutral' };
 import { computeFreeTime, riskLabel } from '@/modules/freight/freetime';
 import { CARRIERS } from '@/modules/freight/tracking';
 import { TrackLinks } from '@/modules/freight/TrackLinks';
@@ -73,11 +76,13 @@ export default async function ShipmentWorkspace({ params, searchParams }: { para
   const s = await getShipment(params.id);
   if (!s) notFound();
 
-  const [parties, milestones, tasks, comms, charges, containers, contacts, quotes, documents] = await Promise.all([
+  const [parties, milestones, tasks, comms, charges, containers, contacts, quotes, documents, billing, payments] = await Promise.all([
     getShipmentParties(s.id), getShipmentMilestones(s.id), getShipmentTasks(s.id),
     getShipmentCommunications(s.id), getShipmentCharges(s.id), getShipmentContainers(s.id), listContacts(),
-    getShipmentQuotes(s.id), getShipmentDocuments(s.id),
+    getShipmentQuotes(s.id), getShipmentDocuments(s.id), getShipmentBilling(s.id), getShipmentPayments(s.id),
   ]);
+  const payStat = paymentStatus(billing);
+  const balanceDue = Math.max(0, billing.invoice_total - billing.amount_paid);
 
   const ccy = s.currency_code ?? 'USD';
   const error = searchParams?.error;
@@ -480,6 +485,76 @@ export default async function ShipmentWorkspace({ params, searchParams }: { para
           <div className="field"><label className="label">Ccy</label><input name="currency_code" className="input" defaultValue={ccy} maxLength={3} style={{ width: 70 }} /></div>
           <button className="btn btn-ghost" type="submit">Add line</button>
         </form>
+      </Section>
+
+      {/* Payment & release */}
+      <Section title="Payment & release">
+        <div className="card" style={{ padding: 18, display: 'grid', gap: 16 }}>
+          <div className="row" style={{ gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Detail label="Invoiced" value={<span className="num">{formatMoney(billing.invoice_total, ccy)}</span>} />
+            <Detail label="Paid" value={<span className="num">{formatMoney(billing.amount_paid, ccy)}</span>} />
+            <Detail label="Balance due" value={<span className="num" style={{ fontWeight: 650, color: balanceDue > 0 ? 'var(--danger)' : undefined }}>{formatMoney(balanceDue, ccy)}</span>} />
+            <Detail label="Status" value={<span className={`badge ${PAY_BADGE[payStat]}`} style={{ textTransform: 'capitalize' }}>{payStat}</span>} />
+            <Detail label="Cargo release" value={billing.released
+              ? <span className="badge badge-success">Released</span>
+              : <span className="badge badge-warning">Held</span>} />
+          </div>
+
+          {/* Set what we billed + terms */}
+          <form action={setShipmentBilling} className="row" style={{ gap: 8, alignItems: 'end', flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+            <input type="hidden" name="shipment_id" value={s.id} />
+            <div className="field"><label className="label">Invoice total</label><input name="invoice_total" type="number" step="0.01" className="input" defaultValue={billing.invoice_total || ''} style={{ width: 140 }} /></div>
+            <div className="field"><label className="label">Terms</label>
+              <select name="payment_terms" className="input" defaultValue={billing.payment_terms}>
+                <option value="prepaid">Prepaid (pay before release)</option>
+                <option value="open_account">Open account (credit)</option>
+              </select>
+            </div>
+            <button className="btn btn-ghost btn-sm" type="submit">Save billing</button>
+          </form>
+
+          {/* Record a payment */}
+          <form action={recordShipmentPayment} className="row" style={{ gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
+            <input type="hidden" name="shipment_id" value={s.id} />
+            <div className="field"><label className="label">Payment received</label><input name="amount" type="number" step="0.01" className="input" style={{ width: 130 }} required /></div>
+            <div className="field"><label className="label">Ccy</label><input name="currency_code" className="input" defaultValue={ccy} maxLength={3} style={{ width: 64 }} /></div>
+            <div className="field"><label className="label">Method</label><input name="method" className="input" placeholder="wire" style={{ width: 100 }} /></div>
+            <div className="field"><label className="label">Ref</label><input name="reference" className="input" style={{ width: 110 }} /></div>
+            <div className="field"><label className="label">Date</label><input name="paid_at" type="date" className="input" /></div>
+            <button className="btn btn-ghost btn-sm" type="submit">Record payment</button>
+          </form>
+
+          {payments.length > 0 ? (
+            <div className="table-wrap">
+              <table className="table">
+                <thead><tr><th className="date" style={{ width: 120 }}>Date</th><th className="num" style={{ width: 140 }}>Amount</th><th>Method</th><th>Ref</th></tr></thead>
+                <tbody>
+                  {payments.map((p) => (
+                    <tr key={p.id}><td className="muted date">{formatDate(p.paid_at)}</td><td className="num">{formatMoney(p.amount, p.currency_code ?? ccy)}</td><td>{p.method ?? '—'}</td><td className="muted">{p.reference ?? '—'}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+
+          {/* Release gate */}
+          {billing.released ? (
+            <p className="muted" style={{ margin: 0 }}>✓ Cargo released{billing.released_at ? ` on ${formatDate(billing.released_at)}` : ''}. The delivery order can be issued.</p>
+          ) : (
+            <form action={releaseShipment} className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+              <input type="hidden" name="shipment_id" value={s.id} />
+              <button className="btn btn-primary" type="submit" disabled={false}>Release cargo / issue delivery order</button>
+              {payStat !== 'paid' && billing.payment_terms !== 'open_account' ? (
+                <label className="row" style={{ gap: 6, fontSize: 'var(--text-sm)' }}>
+                  <input type="checkbox" name="override" /> Override (release on credit — balance {formatMoney(balanceDue, ccy)} outstanding)
+                </label>
+              ) : null}
+              <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>
+                {billing.payment_terms === 'open_account' ? 'Open-account terms — release allowed.' : payStat === 'paid' ? 'Paid in full — safe to release.' : 'Held until paid in full (or override).'}
+              </span>
+            </form>
+          )}
+        </div>
       </Section>
     </div>
   );
