@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { getPlatformContext } from '@/core/session/context';
-import { AppShell } from '@/core/ui';
 import { ServiceWorkerRegister } from '@/core/ui/ServiceWorkerRegister';
 
 const inter = Inter({
@@ -26,13 +24,16 @@ export const viewport: Viewport = {
   viewportFit: 'cover', // extend under notches; paired with safe-area insets in globals.css
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await getPlatformContext();
+// Root layout is intentionally minimal: just <html>/<body> + the service worker.
+// The internal app chrome (AppShell) lives in app/(internal)/layout.tsx so the
+// customer portal at /portal can render its own shell with no internal navigation,
+// company switcher, or platform-context resolution.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
       <body>
         <ServiceWorkerRegister />
-        <AppShell ctx={ctx}>{children}</AppShell>
+        {children}
       </body>
     </html>
   );
