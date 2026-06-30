@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { setActiveCompany } from '@/core/session/active-company';
 import { signOut } from '@/core/session/auth-actions';
 import type { SessionCompany } from '@/core/session/types';
@@ -87,6 +88,14 @@ export function AccountMenu({
               <path d="M3 13.2c.7-2 2.6-3.2 5-3.2s4.3 1.2 5 3.2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
             </svg>
             Account settings
+          </Link>
+
+          <Link href={'/request-access' as Route} className="account-item" role="menuitem" onClick={() => setOpen(false)}>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+              <rect x="3" y="7" width="10" height="6.5" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+            Request access
           </Link>
 
           {companies.length > 1 ? (

@@ -46,6 +46,13 @@ export default async function AdminHome() {
             description="Invite people and grant each one exactly the permissions they need — individual checkboxes, with role templates as a starting point."
           />
         ) : null}
+        {canUsers ? (
+          <AdminCard
+            href={'/admin/access-requests' as Route}
+            title="Access requests"
+            description="Review and approve requests for module access. Approving grants that module to the account; you can fine-tune permissions afterward."
+          />
+        ) : null}
       </div>
     </div>
   );

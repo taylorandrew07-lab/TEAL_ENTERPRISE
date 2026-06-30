@@ -108,9 +108,22 @@ export const getPlatformContext = cache(async (): Promise<PlatformContext> => {
         : Promise.resolve({ data: null } as { data: null }),
     ]);
 
-    const enabledModuleKeys = (enabledRowsRes.data ?? [])
+    let enabledModuleKeys: string[] = (enabledRowsRes.data ?? [])
       .map((r: any) => r.module?.key)
       .filter(Boolean);
+
+    // Per-ACCOUNT module isolation (matches the RLS in 0025): a regular user only
+    // sees a module if they hold an explicit grant in core.user_module_access for the
+    // active company. Super admins see every enabled module. Fail-closed: no grant → no module.
+    if (!isSuperAdmin) {
+      const { data: uma } = await core
+        .from('user_module_access')
+        .select('module_key')
+        .eq('user_id', authUser.id)
+        .eq('company_id', activeCompanyId);
+      const granted = new Set(((uma as { module_key: string }[] | null) ?? []).map((r) => r.module_key));
+      enabledModuleKeys = enabledModuleKeys.filter((k) => granted.has(k));
+    }
 
     const permissions = isSuperAdmin
       ? allPermissionKeys()
