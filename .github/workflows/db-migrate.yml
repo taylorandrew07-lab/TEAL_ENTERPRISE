@@ -38,3 +38,7 @@ jobs:
         run: node scripts/db-test.mjs supabase/tests/portal_isolation_test.sql
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Verify stage automation + notifications (rolled back)
+        run: node scripts/db-test.mjs supabase/tests/stage_automation_test.sql
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

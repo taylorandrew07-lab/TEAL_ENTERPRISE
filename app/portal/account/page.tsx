@@ -1,10 +1,12 @@
 import { requirePortal } from '@/core/session/portal-guard';
+import { getNotificationPreferences, updateNotificationPreferences } from '@/modules/freight/portal/notifications';
 
 export const metadata = { title: 'Account — Jupiter Logistics' };
 
 export default async function PortalAccount() {
   const ctx = await requirePortal();
   const customerNames = ctx.customers.map((c) => c.contactName).join(', ');
+  const prefs = await getNotificationPreferences();
 
   return (
     <div>
@@ -29,10 +31,28 @@ export default async function PortalAccount() {
           <div style={{ marginTop: 2 }}>{customerNames || '—'}</div>
         </div>
         <p className="muted" style={{ margin: 0, fontSize: 'var(--text-sm)' }}>
-          Notification preferences will appear here soon. To update your details, contact your
-          Jupiter Logistics representative.
+          To update your details, contact your Jupiter Logistics representative.
         </p>
       </div>
+
+      <section style={{ marginTop: 24, maxWidth: 520 }}>
+        <h2 style={{ fontSize: 'var(--text-lg)', margin: '0 0 10px' }}>Notifications</h2>
+        <form action={updateNotificationPreferences} className="card" style={{ padding: 18, display: 'grid', gap: 12 }}>
+          <label className="row" style={{ gap: 10, alignItems: 'center' }}>
+            <input type="checkbox" name="in_app" defaultChecked={prefs.in_app} />
+            <span>Show notifications in this portal</span>
+          </label>
+          <label className="row" style={{ gap: 10, alignItems: 'center' }}>
+            <input type="checkbox" name="email" defaultChecked={prefs.email} />
+            <span>Also email me notifications</span>
+          </label>
+          <p className="muted" style={{ margin: 0, fontSize: 'var(--text-xs)' }}>
+            Notifications cover ETA changes, arrival, delivery, and free-time/demurrage warnings. Email delivery
+            begins once Jupiter Logistics enables it.
+          </p>
+          <div><button type="submit" className="btn btn-primary btn-sm">Save preferences</button></div>
+        </form>
+      </section>
     </div>
   );
 }
